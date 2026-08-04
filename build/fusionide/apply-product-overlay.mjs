@@ -22,15 +22,20 @@ const PRODUCT = join(ROOT, 'product.json');
 /**
  * Keys FusionIDE must never ship.
  *
- * - Copilot: `defaultChatAgent` carries GitHub entitlement/token endpoints and
- *   `trustedExtensionAuthAccess` grants Copilot Chat silent GitHub auth. Both
- *   are Microsoft product integrations, not Code - OSS.
+ * - Copilot: `trustedExtensionAuthAccess` grants Copilot Chat silent GitHub auth — a
+ *   Microsoft product integration, not Code - OSS. `defaultChatAgent` is NOT stripped: the
+ *   agent-enabled workbench reads it at startup and crashes to a blank screen when it is
+ *   absent, so IDENTITY ships a SANITIZED one (FusionClaw's own fusionide-bridge ids, every
+ *   GitHub entitlement/token/documentation URL blanked to an empty string).
  * - Telemetry and remote services: no ingestion key, no update server, no
  *   experiment or NLS service, and no Microsoft voice endpoint.
- * - `builtInExtensions` is fetched from whatever gallery is configured
- *   (build/lib/builtInExtensions.ts), so with an Open VSX gallery the build
- *   would ask Open VSX for Microsoft-published extensions. Dropped for now;
- *   re-add only after confirming the registry serves each one.
+ * The built-in extension lists are handled separately, in IDENTITY: they are
+ * set to empty arrays rather than deleted. The entries are fetched from whatever
+ * gallery product.json configures (build/lib/builtInExtensions.ts), so with an
+ * Open VSX gallery the build would ask Open VSX for Microsoft-published
+ * extensions. Upstream also iterates builtInExtensionsEnabledWithAutoUpdates
+ * without a fallback at runtime, so both keys must remain present. Empty ships
+ * nothing and enables no automatic updates.
  */
 const FORBIDDEN_KEYS = [
 	'aiConfig',
@@ -41,11 +46,8 @@ const FORBIDDEN_KEYS = [
 	'experimentsUrl',
 	'nlsBaseUrl',
 	'cacheUrl',
-	'defaultChatAgent',
 	'trustedExtensionAuthAccess',
 	'voiceWsUrl',
-	'builtInExtensions',
-	'builtInExtensionsEnabledWithAutoUpdates',
 	'sessionsWindowAllowedExtensions',
 	'onboardingKeymaps',
 	'onboardingThemes',
@@ -57,6 +59,10 @@ const FORBIDDEN_KEYS = [
 const FORBIDDEN_SUBSTRINGS = ['marketplace.visualstudio.com', 'vscode-unpkg.net', 'vscode-cdn.net'];
 
 const IDENTITY = {
+	// Empty, not absent: gulpfile.reh.ts reads this key without a fallback.
+	builtInExtensions: [],
+	// Empty, not absent: extension scanning iterates this key without a fallback.
+	builtInExtensionsEnabledWithAutoUpdates: [],
 	nameShort: 'FusionIDE',
 	nameLong: 'FusionIDE by FusionClaw',
 	applicationName: 'fusionide',
@@ -95,6 +101,50 @@ const IDENTITY = {
 		'https://fusionclaw.ai',
 		'https://github.com/FusionClawAI',
 	],
+	// FusionClaw ships its own agent via the injected fusionide-bridge extension. The
+	// agent-enabled workbench reads product.defaultChatAgent.extensionId/.chatExtensionId at
+	// startup (and crashes to a blank screen if the object is absent), so provide the
+	// STRUCTURAL config it needs — SANITIZED: ids point at fusionide-bridge and every GitHub
+	// entitlement/token/documentation URL is an empty string, so no Microsoft/GitHub endpoint ships.
+	defaultChatAgent: {
+		extensionId: 'fusionclaw.fusionide-bridge',
+		chatExtensionId: 'fusionclaw.fusionide-bridge',
+		chatExtensionOutputId: 'fusionclaw.fusionide-bridge',
+		chatExtensionOutputExtensionStateCommand: '',
+		documentationUrl: '',
+		skusDocumentationUrl: '',
+		optimizeUsageDocumentationUrl: '',
+		publicCodeMatchesUrl: '',
+		managePlanUrl: '',
+		upgradePlanUrl: '',
+		signUpUrl: '',
+		termsStatementUrl: '',
+		privacyStatementUrl: '',
+		provider: {
+			default: { id: 'fusionclaw', name: 'FusionClaw' },
+			enterprise: { id: 'fusionclaw', name: 'FusionClaw' },
+			google: { id: 'fusionclaw', name: 'FusionClaw' },
+			apple: { id: 'fusionclaw', name: 'FusionClaw' },
+		},
+		providerExtensionId: 'fusionclaw.fusionide-bridge',
+		providerUriSetting: '',
+		providerScopes: [],
+		entitlementUrl: '',
+		entitlementSignupLimitedUrl: '',
+		tokenEntitlementUrl: '',
+		mcpRegistryDataUrl: '',
+		managedSettingsUrl: '',
+		chatQuotaExceededContext: '',
+		completionsQuotaExceededContext: '',
+		walkthroughCommand: '',
+		completionsMenuCommand: '',
+		chatRefreshTokenCommand: '',
+		generateCommitMessageCommand: '',
+		resolveMergeConflictsCommand: '',
+		completionsAdvancedSetting: '',
+		completionsEnablementSetting: '',
+		nextEditSuggestionsSetting: '',
+	},
 };
 
 function violations(product) {

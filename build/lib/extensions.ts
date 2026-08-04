@@ -315,6 +315,28 @@ const nativeExtensions = [
 	'microsoft-authentication',
 ];
 
+// --- Start FusionIDE ---
+// Built-in extensions dropped from the FusionIDE reh-web pack to keep it lightweight:
+// niche language grammars, extra color themes, and legacy task-runner extensions. Open VSX
+// stays enabled, so users can reinstall any of these on demand. Spread into
+// `excludedExtensions` below (which drives the compile globs and the runtime builtin manifest
+// via scanBuiltinExtensions) and re-used by the reh-web ship-list filter in gulpfile.reh.ts.
+// Common languages (python/go/rust/java/cpp/csharp/php/ruby/powershell/shellscript/sql/
+// docker/...) are deliberately KEPT out-of-box, as are less/scss and the default themes
+// (theme-defaults, theme-seti).
+export const fusionDroppedExtensions = [
+	// niche language grammars
+	'clojure', 'coffeescript', 'dart', 'fsharp', 'groovy', 'hlsl', 'julia', 'latex', 'lua',
+	'objective-c', 'perl', 'pug', 'r', 'restructuredtext', 'shaderlab', 'swift', 'vb',
+	// legacy task-runner extensions
+	'grunt', 'gulp', 'jake', 'tunnel-forwarding',
+	// extra color themes
+	'theme-abyss', 'theme-kimbie-dark', 'theme-monokai', 'theme-monokai-dimmed',
+	'theme-quietlight', 'theme-red', 'theme-solarized-dark', 'theme-solarized-light',
+	'theme-tomorrow-night-blue',
+];
+// --- End FusionIDE ---
+
 const excludedExtensions = [
 	'copilot',
 	'vscode-api-tests',
@@ -323,6 +345,9 @@ const excludedExtensions = [
 	'vscode-test-resolver',
 	'ms-vscode.node-debug',
 	'ms-vscode.node-debug2',
+	// --- Start FusionIDE ---
+	...fusionDroppedExtensions,
+	// --- End FusionIDE ---
 ];
 
 const marketplaceWebExtensionsExclude = new Set([

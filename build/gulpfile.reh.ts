@@ -13,7 +13,15 @@ import * as optimize from './lib/optimize.ts';
 import { inlineMeta } from './lib/inlineMeta.ts';
 import product from '../product.json' with { type: 'json' };
 import { getProductionDependencies } from './lib/dependencies.ts';
-import { readISODate } from './lib/date.ts';
+// --- Start FusionIDE ---
+// writeISODate + the esbuild core-build helpers, used by the useEsbuildTranspile fast path in
+// the reh-web serverTask below (mirrors the desktop serverTask + core-ci).
+import { readISODate, writeISODate } from './lib/date.ts';
+import { copyCodiconsTask } from './lib/compilation.ts';
+import { useEsbuildTranspile } from './buildConfig.ts';
+import { spawnTsgo } from './lib/tsgo.ts';
+import { runEsbuildBundle } from './lib/esbuild.ts';
+// --- End FusionIDE ---
 import vfs from 'vinyl-fs';
 import packageJson from '../package.json' with { type: 'json' };
 import { untar } from './lib/util.ts';
@@ -22,8 +30,23 @@ import * as fs from 'fs';
 import glob from 'glob';
 import { promisify } from 'util';
 import rceditCallback from 'rcedit';
-import { compileBuildWithManglingTask } from './gulpfile.compile.ts';
-import { cleanExtensionsBuildTask, compileNonNativeExtensionsBuildTask, compileNativeExtensionsBuildTask, compileExtensionMediaBuildTask, compileCopilotExtensionBuildTask } from './gulpfile.extensions.ts';
+// --- Start FusionIDE ---
+// The mangler refuses to build when any protected member is reached from
+// outside its class, and upstream 1.131 ships such an access in
+// src/vs/sessions (sessionChangesEditor reaching into toggle/actionViewItems).
+// Microsoft's own pipeline does not hit it because it builds a different source
+// set, so a fork has to choose: repair upstream files on every rebase, or drop
+// mangling. We take upstream's own no-mangling task — minification still runs,
+// only the private/protected field renaming is skipped, and the patch is one
+// import that survives rebases. (VSCodium carries the same patch.)
+import { compileBuildWithoutManglingTask as compileBuildWithManglingTask } from './gulpfile.compile.ts';
+// --- End FusionIDE ---
+// --- Start FusionIDE ---
+// compileCopilotExtensionBuildTask intentionally not imported: the built-in GitHub Copilot
+// Chat extension is excluded from the FusionIDE reh-web pack (FusionClaw injects its own agent).
+import { cleanExtensionsBuildTask, compileNonNativeExtensionsBuildTask, compileNativeExtensionsBuildTask, compileExtensionMediaBuildTask } from './gulpfile.extensions.ts';
+import { fusionDroppedExtensions } from './lib/extensions.ts';
+// --- End FusionIDE ---
 import { vscodeWebResourceIncludes, createVSCodeWebFileContentMapper } from './gulpfile.vscode.web.ts';
 import * as cp from 'child_process';
 import crypto from 'crypto';
@@ -31,7 +54,11 @@ import log from 'fancy-log';
 import buildfile from './buildfile.ts';
 import { fetchUrls } from './lib/fetch.ts';
 import { downloadFeedPackage } from './lib/azureFeed.ts';
-import { ensureCopilotPlatformPackage, getCopilotExcludeFilter, getCopilotRuntimePrebuildFiles, getCopilotTgrepExcludeFilter, getMxcExcludeFilter, getRipgrepExcludeFilter, prepareBuiltInCopilotRipgrepShim } from './lib/copilot.ts';
+// --- Start FusionIDE ---
+// prepareBuiltInCopilotRipgrepShim removed with the built-in Copilot extension (see below).
+// The remaining helpers serve the SERVER-side agent host runtime and must stay.
+import { ensureCopilotPlatformPackage, getCopilotExcludeFilter, getCopilotRuntimePrebuildFiles, getCopilotTgrepExcludeFilter, getMxcExcludeFilter, getRipgrepExcludeFilter } from './lib/copilot.ts';
+// --- End FusionIDE ---
 import { readAgentSdkResults } from './agent-sdk/common.ts';
 
 
@@ -377,7 +404,12 @@ function packageTask(type: string, platform: string, arch: string, sourceFolderN
 				const manifest = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, extensionPath)).toString());
 				return !isUIExtension(manifest);
 			}).map((extensionPath) => path.basename(path.dirname(extensionPath)))
-			.filter(name => name !== 'vscode-api-tests' && name !== 'vscode-test-resolver'); // Do not ship the test extensions
+			.filter(name => name !== 'vscode-api-tests' && name !== 'vscode-test-resolver') // Do not ship the test extensions
+			// --- Start FusionIDE ---
+			// Do not ship the built-in Copilot extension (FusionClaw injects its own agent) or the
+			// pruned niche grammars/themes. Open VSX stays enabled for reinstall-on-demand.
+			.filter(name => name !== 'copilot' && !fusionDroppedExtensions.includes(name));
+			// --- End FusionIDE ---
 		const builtInExtensions: Array<{ name: string; platforms?: string[]; clientOnly?: boolean }> = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'product.json'), 'utf8')).builtInExtensions;
 		const marketplaceExtensions = builtInExtensions
 			.filter(entry => !entry.platforms || new Set(entry.platforms).has(platform))
@@ -432,6 +464,11 @@ function packageTask(type: string, platform: string, arch: string, sourceFolderN
 			}));
 
 		const license = gulp.src(['remote/LICENSE'], { base: 'remote', allowEmpty: true });
+		// --- Start FusionIDE ---
+		// The runtime-pack assembler requires the upstream license and notices at
+		// the server root so it can generate the installed pack's notices.json.
+		const attribution = gulp.src(['LICENSE.txt', 'ThirdPartyNotices.txt'], { base: '.' });
+		// --- End FusionIDE ---
 
 		const jsFilter = util.filter(data => !data.isDirectory() && /\.js$/.test(data.path));
 
@@ -470,6 +507,7 @@ function packageTask(type: string, platform: string, arch: string, sourceFolderN
 			packageJsonStream,
 			productJsonStream,
 			license,
+			attribution,
 			sources,
 			deps,
 			node,
@@ -533,6 +571,22 @@ function packageTask(type: string, platform: string, arch: string, sourceFolderN
 	};
 }
 
+// --- Start FusionIDE ---
+/** True when the file begins with the "MZ" DOS header every Windows PE carries. */
+async function isWindowsPortableExecutable(filePath: string): Promise<boolean> {
+	let handle: fs.promises.FileHandle | undefined;
+	try {
+		handle = await fs.promises.open(filePath, 'r');
+		const { buffer, bytesRead } = await handle.read(Buffer.alloc(2), 0, 2, 0);
+		return bytesRead === 2 && buffer[0] === 0x4d && buffer[1] === 0x5a;
+	} catch {
+		return false;
+	} finally {
+		await handle?.close();
+	}
+}
+// --- End FusionIDE ---
+
 function hasAuthenticodeSignature(filePath: string): Promise<boolean> {
 	return new Promise((resolve, reject) => {
 		const proc = cp.spawn('signtool.exe', ['verify', '/pa', filePath]);
@@ -584,6 +638,18 @@ function patchWin32DependenciesTask(destinationFolderName: string) {
 			const basename = path.basename(dep);
 			const fullPath = path.join(cwd, dep);
 
+			// --- Start FusionIDE ---
+			// The `**/*.node` glob above catches every native module in the tree,
+			// and some dependencies vendor prebuilds for other platforms (the
+			// Copilot extension ships an arm64-darwin audio-capture.node). rcedit
+			// only understands Windows PE files and fails the whole build on a
+			// Mach-O or ELF binary, so skip anything without the "MZ" header
+			// rather than assuming every .node here is a Windows one.
+			if (!(await isWindowsPortableExecutable(fullPath))) {
+				return;
+			}
+			// --- End FusionIDE ---
+
 			await stripAuthenticodeSignature(fullPath);
 			await rcedit(fullPath, {
 				'file-version': baseVersion,
@@ -604,15 +670,12 @@ function patchWin32DependenciesTask(destinationFolderName: string) {
 	};
 }
 
-function prepareCopilotRipgrepShimTaskREH(platform: string, arch: string, destinationFolderName: string) {
-	return async () => {
-		const outputDir = path.join(BUILD_ROOT, destinationFolderName);
-		const nodeModulesDir = path.join(outputDir, 'node_modules');
-
-		const builtInCopilotExtensionDir = path.join(outputDir, 'extensions', 'copilot');
-		prepareBuiltInCopilotRipgrepShim(platform, arch, builtInCopilotExtensionDir, nodeModulesDir);
-	};
-}
+// --- Start FusionIDE ---
+// prepareCopilotRipgrepShimTaskREH removed: the built-in Copilot extension is not shipped in
+// the FusionIDE reh-web pack, so there is no extensions/copilot tree to shim. Leaving it would
+// throw at package time — prepareBuiltInCopilotRipgrepShim requires the extension's bundled
+// @github/copilot/sdk, which is no longer installed.
+// --- End FusionIDE ---
 
 /**
  * @param product The parsed product.json file contents
@@ -663,7 +726,7 @@ function tweakProductForServerWeb(product: typeof import('../product.json')) {
 				task.task(`node-${platform}-${arch}`) as task.Task,
 				util.rimraf(path.join(BUILD_ROOT, destinationFolderName)),
 				packageTask(type, platform, arch, sourceFolderName, destinationFolderName),
-				prepareCopilotRipgrepShimTaskREH(platform, arch, destinationFolderName)
+				/* --- FusionIDE: prepareCopilotRipgrepShimTaskREH removed with the built-in Copilot extension --- */
 			];
 
 			if (platform === 'win32') {
@@ -673,15 +736,55 @@ function tweakProductForServerWeb(product: typeof import('../product.json')) {
 			const serverTaskCI = task.define(`vscode-${type}${dashed(platform)}${dashed(arch)}${dashed(minified)}-ci`, task.series(...packageTasks));
 			task.task(serverTaskCI);
 
-			const serverTask = task.define(`vscode-${type}${dashed(platform)}${dashed(arch)}${dashed(minified)}`, task.series(
-				compileBuildWithManglingTask,
-				cleanExtensionsBuildTask,
-				compileNonNativeExtensionsBuildTask,
-				compileCopilotExtensionBuildTask,
-				compileExtensionMediaBuildTask,
-				minified ? minifyTask : bundleTask,
-				serverTaskCI
-			));
+			// --- Start FusionIDE ---
+			// Copilot extension removed (was compileCopilotExtensionBuildTask). Honor the fork's
+			// useEsbuildTranspile flag (buildConfig.ts, already true) exactly like the desktop
+			// serverTask and core-ci: bundle the core straight from src via esbuild (build/next),
+			// replacing the ~7-9 min tsc emit + optimize.bundleTask. The esbuild bundle scans
+			// .build/extensions for the builtin-extensions manifest, so it runs after the extension
+			// compile; tsgo runs in parallel to preserve type-safety (esbuild does not type-check).
+			// The tsc path stays as the flag-off fallback.
+			let serverTask: task.Task;
+			if (useEsbuildTranspile) {
+				const esbuildBundleTask = task.define(
+					`esbuild-vscode-${type}${dashed(platform)}${dashed(arch)}${dashed(minified)}`,
+					() => runEsbuildBundle(
+						sourceFolderName,
+						!!minified,
+						true,
+						type === 'reh-web' ? 'server-web' : 'server',
+						minified ? `https://main.vscode-cdn.net/sourcemaps/${commit}/core` : undefined
+					)
+				);
+				const typecheckTask = task.define(
+					`tsgo-typecheck-vscode-${type}${dashed(platform)}${dashed(arch)}${dashed(minified)}`,
+					() => spawnTsgo(path.join(REPO_ROOT, 'src', 'tsconfig.json'), { taskName: 'tsgo-typecheck', noEmit: true })
+				);
+				serverTask = task.define(`vscode-${type}${dashed(platform)}${dashed(arch)}${dashed(minified)}`, task.series(
+					copyCodiconsTask,
+					task.parallel(
+						task.series(
+							cleanExtensionsBuildTask,
+							compileNonNativeExtensionsBuildTask,
+							compileExtensionMediaBuildTask,
+							writeISODate('out-build'),
+							esbuildBundleTask
+						),
+						typecheckTask
+					),
+					serverTaskCI
+				));
+			} else {
+				serverTask = task.define(`vscode-${type}${dashed(platform)}${dashed(arch)}${dashed(minified)}`, task.series(
+					compileBuildWithManglingTask,
+					cleanExtensionsBuildTask,
+					compileNonNativeExtensionsBuildTask,
+					compileExtensionMediaBuildTask,
+					minified ? minifyTask : bundleTask,
+					serverTaskCI
+				));
+			}
+			// --- End FusionIDE ---
 			task.task(serverTask);
 		});
 	});

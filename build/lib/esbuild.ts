@@ -13,7 +13,10 @@ const root = path.resolve(import.meta.dirname, '../..');
 export function runEsbuildTranspile(outDir: string, excludeTests: boolean): Promise<void> {
 	return new Promise((resolve, reject) => {
 		const scriptPath = path.join(root, 'build/next/index.ts');
-		const args = [scriptPath, 'transpile', '--out', outDir];
+		// --- Start FusionIDE ---
+		// Give the esbuild child a large heap. Node flags must precede the script path.
+		const args = ['--max-old-space-size=8192', scriptPath, 'transpile', '--out', outDir];
+		// --- End FusionIDE ---
 		if (excludeTests) {
 			args.push('--exclude-tests');
 		}
@@ -37,7 +40,12 @@ export function runEsbuildTranspile(outDir: string, excludeTests: boolean): Prom
 export function runEsbuildBundle(outDir: string, minify: boolean, nls: boolean, target: 'desktop' | 'server' | 'server-web' = 'desktop', sourceMapBaseUrl?: string): Promise<void> {
 	return new Promise((resolve, reject) => {
 		const scriptPath = path.join(root, 'build/next/index.ts');
-		const args = [scriptPath, 'bundle', '--out', outDir, '--target', target];
+		// --- Start FusionIDE ---
+		// Give the esbuild bundler child a large heap so NLS/mangle post-processing over the
+		// multi-MB server-web bundle can't OOM (it holds the full bundle + source-map objects in
+		// memory). Node flags must precede the script path.
+		const args = ['--max-old-space-size=8192', scriptPath, 'bundle', '--out', outDir, '--target', target];
+		// --- End FusionIDE ---
 		if (minify) {
 			args.push('--minify');
 			args.push('--mangle-privates');

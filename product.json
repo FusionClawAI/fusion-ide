@@ -46,5 +46,46 @@
 		"https://open-vsx.org",
 		"https://fusionclaw.ai",
 		"https://github.com/FusionClawAI"
-	]
+	],
+	"builtInExtensions": [],
+	"builtInExtensionsEnabledWithAutoUpdates": [],
+	"defaultChatAgent": {
+		"extensionId": "fusionclaw.fusionide-bridge",
+		"chatExtensionId": "fusionclaw.fusionide-bridge",
+		"chatExtensionOutputId": "fusionclaw.fusionide-bridge",
+		"chatExtensionOutputExtensionStateCommand": "",
+		"documentationUrl": "",
+		"skusDocumentationUrl": "",
+		"optimizeUsageDocumentationUrl": "",
+		"publicCodeMatchesUrl": "",
+		"managePlanUrl": "",
+		"upgradePlanUrl": "",
+		"signUpUrl": "",
+		"termsStatementUrl": "",
+		"privacyStatementUrl": "",
+		"provider": {
+			"default": { "id": "fusionclaw", "name": "FusionClaw" },
+			"enterprise": { "id": "fusionclaw", "name": "FusionClaw" },
+			"google": { "id": "fusionclaw", "name": "FusionClaw" },
+			"apple": { "id": "fusionclaw", "name": "FusionClaw" }
+		},
+		"providerExtensionId": "fusionclaw.fusionide-bridge",
+		"providerUriSetting": "",
+		"providerScopes": [],
+		"entitlementUrl": "",
+		"entitlementSignupLimitedUrl": "",
+		"tokenEntitlementUrl": "",
+		"mcpRegistryDataUrl": "",
+		"managedSettingsUrl": "",
+		"chatQuotaExceededContext": "",
+		"completionsQuotaExceededContext": "",
+		"walkthroughCommand": "",
+		"completionsMenuCommand": "",
+		"chatRefreshTokenCommand": "",
+		"generateCommitMessageCommand": "",
+		"resolveMergeConflictsCommand": "",
+		"completionsAdvancedSetting": "",
+		"completionsEnablementSetting": "",
+		"nextEditSuggestionsSetting": ""
+	}
 }

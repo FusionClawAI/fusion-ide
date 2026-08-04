@@ -15,7 +15,11 @@ export const dirs = [
 	'build/vite',
 	'extensions',
 	'extensions/configuration-editing',
-	'extensions/copilot',
+	// --- Start FusionIDE ---
+	// 'extensions/copilot' intentionally NOT installed: the built-in GitHub Copilot Chat
+	// extension is excluded from the FusionIDE reh-web pack (FusionClaw injects its own agent
+	// via fusionide-bridge). Skipping it avoids a ~1.34 GB npm install and its postinstall.
+	// --- End FusionIDE ---
 	'extensions/css-language-features',
 	'extensions/css-language-features/server',
 	'extensions/debug-auto-launch',
