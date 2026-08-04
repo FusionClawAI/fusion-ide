@@ -89,13 +89,13 @@ const generalShellTypeMap = new Map<string, GeneralShellType>([
  *
  * FusionClaw already starts this server with an allowlisted environment, so no
  * provider credential reaches the process tree at all. What remains is the
- * bridge handle it must pass us — the path to a 0600 file holding the loopback
+ * bridge handle it must pass us  -  the path to a 0600 file holding the loopback
  * bridge URL and its token. The extension host needs it; a shell does not, and
  * a shell that could read it could drive the desktop's bridge as though it were
  * the IDE.
  *
  * No extension API can do this: `EnvironmentVariableCollection` only appends,
- * replaces, or prepends *named* variables — it cannot remove one, and it cannot
+ * replaces, or prepends *named* variables  -  it cannot remove one, and it cannot
  * see a variable a user re-injected through `terminal.integrated.env.*`. This
  * is the one choke point every PTY passes through, which is why it is a patch.
  */

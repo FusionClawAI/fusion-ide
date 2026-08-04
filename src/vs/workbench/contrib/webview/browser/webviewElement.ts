@@ -77,7 +77,7 @@ interface WebviewActionContext {
  * Extensions whose webviews may request the microphone.
  *
  * FusionVoice captures inside the chat webview, and an iframe cannot obtain a
- * device its permissions policy never granted — there is no extension API to
+ * device its permissions policy never granted  -  there is no extension API to
  * widen that policy, which is why this is a patch. It is an allowlist rather
  * than a blanket grant so a third-party extension installed from the gallery
  * cannot silently reach the microphone; the desktop still owns the OS-level
