@@ -87,5 +87,10 @@
 		"completionsAdvancedSetting": "",
 		"completionsEnablementSetting": "",
 		"nextEditSuggestionsSetting": ""
+	},
+	"extensionEnabledApiProposals": {
+		"fusionclaw.fusionide-bridge": [
+			"defaultChatParticipant"
+		]
 	}
 }
