@@ -107,7 +107,10 @@ import { IChatResponseViewModel, isResponseVM } from '../../../common/model/chat
 import { IChatAgentService } from '../../../common/participants/chatAgents.js';
 import { ILanguageModelToolsService } from '../../../common/tools/languageModelToolsService.js';
 import { ChatHistoryNavigator } from '../../../common/widget/chatWidgetHistoryService.js';
-import { ChatEditingSessionSubmitAction, ChatSessionPrimaryPickerAction, ChatSubmitAction, IChatExecuteActionContext, OpenDelegationPickerAction, OpenModelPickerAction, OpenModePickerAction, OpenPermissionPickerAction, OpenSessionTargetPickerAction, OpenWorkspacePickerAction } from '../../actions/chatExecuteActions.js';
+import { ChatEditingSessionSubmitAction, ChatSessionPrimaryPickerAction, ChatSubmitAction, FusionclawOpenActionModePickerAction, IChatExecuteActionContext, OpenDelegationPickerAction, OpenModelPickerAction, OpenModePickerAction, OpenPermissionPickerAction, OpenSessionTargetPickerAction, OpenWorkspacePickerAction } from '../../actions/chatExecuteActions.js';
+// --- Start FusionIDE ---
+import { FusionclawActionModePickerActionItem } from './fusionideActionModePickerActionItem.js';
+// --- End FusionIDE ---
 import { ChatVoiceInputModeAction, VoiceInputModeActionViewItem } from '../../voiceInputMode/voiceInputModeActionViewItem.js';
 import { ChatSpeechToTextConnectingAction, ChatSpeechToTextPreparingAction, ToggleChatSpeechToTextAction } from '../../actions/chatSpeechToTextActions.js';
 import { DictationActionViewItem } from '../../speechToText/dictationActionViewItem.js';
@@ -3159,6 +3162,9 @@ export class ChatInputPart extends Disposable implements IHistoryNavigationWidge
 		const shorterChatInputActionIds = new Set<string>([
 			OpenModePickerAction.ID,
 			ConfigureToolsAction.ID,
+			// --- Start FusionIDE ---
+			FusionclawOpenActionModePickerAction.ID,
+			// --- End FusionIDE ---
 		]);
 		this.inputActionsToolbar = this._register(this.instantiationService.createInstance(MenuWorkbenchToolBar, this.options.renderInputToolbarBelowInput ? this.attachmentsContainer : toolbarsContainer, MenuId.ChatInput, {
 			telemetrySource: this.options.menus.telemetrySource,
@@ -3202,6 +3208,10 @@ export class ChatInputPart extends Disposable implements IHistoryNavigationWidge
 
 					const itemDelegate: IModelPickerDelegate = this._createModelPickerDelegate();
 					return this.modelWidget = this.instantiationService.createInstance(ModelPickerActionItem, action, itemDelegate, pickerOptions);
+					// --- Start FusionIDE ---
+				} else if (action.id === FusionclawOpenActionModePickerAction.ID && action instanceof MenuItemAction) {
+					return this.instantiationService.createInstance(FusionclawActionModePickerActionItem, action, pickerOptions);
+					// --- End FusionIDE ---
 				} else if (action.id === OpenModePickerAction.ID && action instanceof MenuItemAction) {
 					const delegate: IModePickerDelegate = this._createModePickerDelegate();
 					return this.modeWidget = this.instantiationService.createInstance(ModePickerActionItem, action, delegate, pickerOptions);

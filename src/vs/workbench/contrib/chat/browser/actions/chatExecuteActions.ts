@@ -552,6 +552,47 @@ export class OpenModePickerAction extends Action2 {
 	}
 }
 
+// --- Start FusionIDE ---
+/**
+ * FusionClaw's execution-mode chip. The mode belongs to the FusionClaw broker,
+ * not the workbench, so this action only opens the picker — the extension owns
+ * the value, the copy and the validation.
+ *
+ * Gated on the extension having published a menu: with no bridge there is no
+ * mode to set, and a chip that could not act would be worse than none.
+ */
+export class FusionclawOpenActionModePickerAction extends Action2 {
+	static readonly ID = 'fusionclaw.chat.openActionModePicker';
+
+	constructor() {
+		super({
+			id: FusionclawOpenActionModePickerAction.ID,
+			title: localize2('fusionclaw.openActionModePicker.label', "Open Behavior Picker"),
+			tooltip: localize('fusionclaw.setActionMode', "Set how FusionClaw acts on this workspace"),
+			category: CHAT_CATEGORY,
+			f1: false,
+			precondition: ChatContextKeys.enabled,
+			menu: [
+				{
+					id: MenuId.ChatInput,
+					order: 2,
+					when: ContextKeyExpr.and(
+						ChatContextKeys.enabled,
+						ChatContextKeys.location.isEqualTo(ChatAgentLocation.Chat),
+						ChatContextKeys.inQuickChat.negate(),
+						ContextKeyExpr.has('fusionclaw.chat.actionModeMenu')),
+					group: 'navigation',
+				},
+			]
+		});
+	}
+
+	// The chip renders its own dropdown; invoking the command directly is a
+	// no-op rather than a second, keyboard-only menu that could disagree.
+	override async run(): Promise<void> { }
+}
+// --- End FusionIDE ---
+
 export class OpenSessionTargetPickerAction extends Action2 {
 	static readonly ID = 'workbench.action.chat.openSessionTargetPicker';
 
@@ -1226,6 +1267,9 @@ export function registerChatExecuteActions(): DisposableStore {
 	store.add(registerAction2(OpenModelPickerAction));
 	store.add(registerAction2(OpenPermissionPickerAction));
 	store.add(registerAction2(OpenModePickerAction));
+	// --- Start FusionIDE ---
+	store.add(registerAction2(FusionclawOpenActionModePickerAction));
+	// --- End FusionIDE ---
 	store.add(registerAction2(OpenSessionTargetPickerAction));
 	store.add(registerAction2(OpenDelegationPickerAction));
 	store.add(registerAction2(OpenWorkspacePickerAction));
