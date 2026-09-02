@@ -502,3 +502,58 @@
 	border-radius: 16px;
 	text-align: center;
 }
+
+/* --- Start FusionIDE --- */
+
+/* Credit health, beside the menu bar. Colours come from status-bar item roles
+ * so a FusionClaw theme pack recolours it with the rest of the chrome. */
+.monaco-workbench .part.titlebar > .titlebar-container > .titlebar-left > .fusionclaw-credits {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	height: 100%;
+	padding: 0 8px;
+	margin-left: 4px;
+	cursor: pointer;
+	font-size: 12px;
+	line-height: 1;
+	white-space: nowrap;
+	color: var(--vscode-titleBar-activeForeground);
+	-webkit-app-region: no-drag;
+}
+
+.monaco-workbench .part.titlebar > .titlebar-container > .titlebar-left > .fusionclaw-credits.hidden {
+	display: none;
+}
+
+.monaco-workbench .part.titlebar > .titlebar-container > .titlebar-left > .fusionclaw-credits:hover {
+	background-color: var(--vscode-toolbar-hoverBackground);
+}
+
+.monaco-workbench .part.titlebar > .titlebar-container > .titlebar-left > .fusionclaw-credits:focus-visible {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: -1px;
+}
+
+.monaco-workbench .part.titlebar > .titlebar-container > .titlebar-left > .fusionclaw-credits.warning {
+	color: var(--vscode-statusBarItem-warningBackground);
+}
+
+.monaco-workbench .part.titlebar > .titlebar-container > .titlebar-left > .fusionclaw-credits.error {
+	color: var(--vscode-statusBarItem-errorBackground);
+}
+
+.monaco-workbench .part.titlebar > .titlebar-container > .titlebar-left > .fusionclaw-credits > .fusionclaw-credits-icon {
+	font-size: 14px;
+}
+
+/* The name is the affordance; the number carries the weight. */
+.monaco-workbench .part.titlebar > .titlebar-container > .titlebar-left > .fusionclaw-credits > .fusionclaw-credits-name {
+	opacity: 0.8;
+}
+
+.monaco-workbench .part.titlebar > .titlebar-container > .titlebar-left > .fusionclaw-credits > .fusionclaw-credits-label {
+	font-variant-numeric: tabular-nums;
+}
+
+/* --- End FusionIDE --- */

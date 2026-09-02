@@ -56,6 +56,9 @@ import { IHoverDelegate } from '../../../../base/browser/ui/hover/hoverDelegate.
 import { CommandsRegistry } from '../../../../platform/commands/common/commands.js';
 import { safeIntl } from '../../../../base/common/date.js';
 import { IsCompactTitleBarContext, TitleBarVisibleContext } from '../../../common/contextkeys.js';
+// --- Start FusionIDE ---
+import { FusionclawCreditsWidget } from './fusionideCredits.js';
+// --- End FusionIDE ---
 import { ServiceCollection } from '../../../../platform/instantiation/common/serviceCollection.js';
 import { WORKBENCH_MENU_MOTION_CLASS, workbenchMenuCloseAnimation } from '../../actions/menuMotion.js';
 
@@ -491,6 +494,14 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 		) {
 			this.installMenubar();
 		}
+
+		// --- Start FusionIDE ---
+		// Credit health, beside the menu bar. Appended after the menubar so the
+		// left content reads app icon, menus, then credits.
+		if (!this.isAuxiliary) {
+			this._register(this.instantiationService.createInstance(FusionclawCreditsWidget, this.leftContent));
+		}
+		// --- End FusionIDE ---
 
 		// Title
 		this.title = append(this.centerContent, $('div.window-title'));
