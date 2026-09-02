@@ -20,7 +20,7 @@ name: Release FusionIDE runtime pack
 
 on:
   push:
-    branches: [release]
+    branches: [main]
   workflow_dispatch: {}
 
 # One release at a time; never cancel an in-flight publish mid-upload.
@@ -132,7 +132,7 @@ jobs:
       contents: read
     env:
       AWS_REGION: us-east-1
-      UPSTREAM_VERSION: '1.131.0'
+      UPSTREAM_VERSION: '1.136.0'
     steps:
       - name: Checkout fusionclaw pack tooling
         uses: actions/checkout@v4
