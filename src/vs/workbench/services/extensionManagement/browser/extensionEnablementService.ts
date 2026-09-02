@@ -152,6 +152,22 @@ export class ExtensionEnablementService extends Disposable implements IWorkbench
 	}
 
 	private ensureChatExtensionInitialDisabledState(): void {
+		// --- Start FusionIDE ---
+		// `fusionclaw.fusionide-bridge` is named as `defaultChatAgent.chatExtensionId`,
+		// but it is not an opt-in AI add-on: it is the whole desktop bridge. The
+		// Tools menu, the theme sync, the terminal hand-off, the account session
+		// and every `fusionclaw.*` command are contributed by it, and the menubar
+		// gates itself on the context key it publishes.
+		//
+		// Upstream disables the builtin chat extension on first run until chat
+		// setup completes, then records a one-shot migration flag. FusionIDE has
+		// no such setup step, so that branch disables the entire integration on
+		// first launch and persists the choice: the workbench comes up with no
+		// Tools menu, stock colours, and a bridge that never connects.
+		if (this._chatExtensionId === 'fusionclaw.fusionide-bridge') {
+			return;
+		}
+		// --- End FusionIDE ---
 		if (!this._chatExtensionId || this.environmentService.isSessionsWindow || this.environmentService.skipBuiltinExtensions?.some(id => id.toLowerCase() === this._chatExtensionId)) {
 			return;
 		}
@@ -660,6 +676,16 @@ export class ExtensionEnablementService extends Disposable implements IWorkbench
 	}
 
 	private _isDisabledByUnification(identifier: IExtensionIdentifier): boolean {
+		// --- Start FusionIDE ---
+		// Unification retires the completions extension once the chat extension
+		// provides both features. FusionClaw ships ONE extension, named as both
+		// `defaultChatAgent.extensionId` and `.chatExtensionId`, so there is
+		// nothing to retire: disabling it here removes the extension that
+		// provides the feature, and with it the entire desktop bridge.
+		if (this._completionsExtensionId && this._completionsExtensionId === this._chatExtensionId) {
+			return false;
+		}
+		// --- End FusionIDE ---
 		return this._extensionUnificationEnabled && identifier.id.toLowerCase() === this._completionsExtensionId;
 	}
 
