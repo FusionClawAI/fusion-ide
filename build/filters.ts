@@ -228,6 +228,13 @@ export const copyrightFilter = Object.freeze<string[]>([
 
 	// extensions/copilot has its own code style
 	'!extensions/copilot/**',
+
+	// --- Start FusionIDE ---
+	// FusionClaw's own sources carry FusionClaw's copyright. eslint still checks
+	// their header; this check only knows Microsoft's, so it has to skip them.
+	'!src/vs/workbench/contrib/fusionide/**',
+	'!src/vs/**/fusionide*.ts',
+	// --- End FusionIDE ---
 ]);
 
 export const tsFormattingFilter = Object.freeze<string[]>([
