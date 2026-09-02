@@ -37,6 +37,13 @@ set VSCODE_CLI=1
 set ELECTRON_ENABLE_LOGGING=1
 set ELECTRON_ENABLE_STACK_DUMPING=1
 
+:: --- Start FusionIDE ---
+:: build/npm/dirs.ts deliberately skips extensions/copilot's install, so its
+:: dist/ is never built and activating it only ever throws. FusionClaw brings
+:: its own agent through fusionide-bridge. Kept separate from the test-extension
+:: variable, which --extensionTestsPath clears: this one holds either way.
+set DISABLE_COPILOT_EXTENSION="--disable-extension=GitHub.copilot-chat"
+:: --- End FusionIDE ---
 set DISABLE_TEST_EXTENSION="--disable-extension=vscode.vscode-api-tests"
 for %%A in (%*) do (
 	if "%%~A"=="--extensionTestsPath" (
@@ -45,7 +52,7 @@ for %%A in (%*) do (
 )
 
 :: Launch Code
-%CODE% . %DISABLE_TEST_EXTENSION% %*
+%CODE% . %DISABLE_TEST_EXTENSION% %DISABLE_COPILOT_EXTENSION% %*
 goto end
 
 :builtin

@@ -43,13 +43,20 @@ function code() {
 	export ELECTRON_ENABLE_STACK_DUMPING=1
 	export ELECTRON_ENABLE_LOGGING=1
 
+	# --- Start FusionIDE ---
+	# build/npm/dirs.ts deliberately skips extensions/copilot's install, so its
+	# dist/ is never built and activating it only ever throws. FusionClaw brings
+	# its own agent through fusionide-bridge. Kept separate from the test-extension
+	# variable, which --extensionTestsPath clears: this one holds either way.
+	DISABLE_COPILOT_EXTENSION="--disable-extension=GitHub.copilot-chat"
+	# --- End FusionIDE ---
 	DISABLE_TEST_EXTENSION="--disable-extension=vscode.vscode-api-tests"
 	if [[ "$@" == *"--extensionTestsPath"* ]]; then
 		DISABLE_TEST_EXTENSION=""
 	fi
 
 	# Launch Code
-	exec "$CODE" . $DISABLE_TEST_EXTENSION "$@"
+	exec "$CODE" . $DISABLE_TEST_EXTENSION $DISABLE_COPILOT_EXTENSION "$@"
 }
 
 function code-wsl()
