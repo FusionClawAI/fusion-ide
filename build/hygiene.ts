@@ -92,10 +92,18 @@ export function hygiene(some: NodeJS.ReadWriteStream | string[] | undefined, run
 	const productJson = es.through(function (file: VinylFile) {
 		const product = JSON.parse(file.contents!.toString('utf8'));
 
-		if (product.extensionsGallery) {
-			console.error(`product.json: Contains 'extensionsGallery'`);
+		// --- Start FusionIDE ---
+		// Upstream bans any `extensionsGallery`, because Code - OSS must not ship one.
+		// FusionIDE deliberately ships Open VSX; what must never appear is Microsoft's
+		// marketplace, which is what the ban actually protects against. These are the same
+		// hosts FORBIDDEN_SUBSTRINGS rejects in build/fusionide/apply-product-overlay.mjs.
+		const gallery = JSON.stringify(product.extensionsGallery ?? '');
+		const offendingHosts = ['marketplace.visualstudio.com', 'vscode-unpkg.net', 'vscode-cdn.net'].filter(host => gallery.includes(host));
+		if (offendingHosts.length > 0) {
+			console.error(`product.json: 'extensionsGallery' points at ${offendingHosts.join(', ')}`);
 			errorCount++;
 		}
+		// --- End FusionIDE ---
 
 		this.emit('data', file);
 	});

@@ -1,0 +1,210 @@
+# Build, sign, and publish the FusionIDE runtime pack.
+#
+# This runs in the fork (FusionClawAI/fusion-ide) because the reh-web server
+# tree embeds a per-OS native Node and node-pty that cannot be cross-compiled —
+# each OS must build on its own runner. The build jobs produce the raw
+# `vscode-reh-web-<plat>-<arch>` server tree; the publish job then checks out
+# FusionClawAI/fusionclaw and drives its `fusionide:pack:*` tooling to assemble,
+# Ed25519-sign, and upload the pack to the immutable S3 prefix
+# `fusionide/v1/<target>/<packVersion>/`.
+#
+# Security: the signing key never touches the repo or the runner's env beyond
+# the single publish step's shell — it is pulled from Secrets Manager after an
+# OIDC role assumption scoped to the fusionide/* prefix + that one secret.
+#
+# macOS (darwin-arm64) is intentionally disabled for now, matching the desktop
+# app's paused Mac leg. Re-enable by uncommenting its matrix entry and adding a
+# macos-14 runner block once the Mac channel is un-paused.
+
+name: Release FusionIDE runtime pack
+
+on:
+  push:
+    branches: [release]
+  workflow_dispatch: {}
+
+# One release at a time; never cancel an in-flight publish mid-upload.
+concurrency:
+  group: fusionide-release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build-server:
+    name: Build reh-web (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2022
+            target: windows-x64
+            gulp_task: vscode-reh-web-win32-x64-min
+            tree_dir: vscode-reh-web-win32-x64
+          - os: ubuntu-22.04
+            target: linux-x64
+            gulp_task: vscode-reh-web-linux-x64-min
+            tree_dir: vscode-reh-web-linux-x64
+          # - os: macos-14
+          #   target: darwin-arm64
+          #   gulp_task: vscode-reh-web-darwin-arm64-min
+          #   tree_dir: vscode-reh-web-darwin-arm64
+    env:
+      # Mirror the fork's Azure compile steps: never fetch the Electron/browser
+      # binaries or ONNX runtime for a server-only (reh-web) build.
+      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+      ONNXRUNTIME_NODE_INSTALL: skip
+      npm_config_arch: x64
+    steps:
+      - name: Checkout fusion-ide
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      # Native module toolchain for the reh-web server (kerberos, native-keymap).
+      # Compiled from source per remote/.npmrc (build_from_source="true").
+      - name: Linux build prerequisites
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            pkg-config libkrb5-dev libxkbfile-dev libx11-dev libsecret-1-dev \
+            libgbm1 build-essential python3
+
+      # patchWin32DependenciesTask shells out to signtool for win32 targets, so
+      # the Windows SDK has to be on PATH (matches build/azure-pipelines/win32).
+      - name: Add Windows SDK to PATH (signtool)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $sdk = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64"
+          if (Test-Path $sdk) { Add-Content -Path $env:GITHUB_PATH -Value $sdk }
+
+      - name: Install build/ dependencies
+        working-directory: build
+        run: npm ci
+
+      - name: Install root dependencies
+        run: |
+          node build/npm/preinstall.ts
+          npm ci
+
+      # Deterministic FusionIDE identity, then a hard gate: no Microsoft
+      # marketplace/CDN, Open VSX only, telemetry off, nameShort === FusionIDE.
+      - name: Apply + verify FusionIDE product overlay
+        run: |
+          node build/fusionide/apply-product-overlay.mjs
+          node build/fusionide/apply-product-overlay.mjs --check
+
+      - name: Build reh-web server tree
+        run: npm run gulp -- ${{ matrix.gulp_task }}
+
+      # The tree lands one level above the repo; archive it flat under a stable
+      # top-level dir so the publish job can extract to a predictable path.
+      - name: Archive server tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f "../${{ matrix.tree_dir }}/out/server-main.js"
+          tar -czf "fusionide-server-${{ matrix.target }}.tar.gz" \
+            -C .. "${{ matrix.tree_dir }}"
+
+      - name: Upload server archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: fusionide-server-${{ matrix.target }}
+          path: fusionide-server-${{ matrix.target }}.tar.gz
+          retention-days: 5
+          if-no-files-found: error
+
+  publish-pack:
+    name: Assemble, sign, and publish packs
+    needs: build-server
+    runs-on: ubuntu-22.04
+    permissions:
+      id-token: write   # assume the AWS publisher role via GitHub OIDC
+      contents: read
+    env:
+      AWS_REGION: us-east-1
+      UPSTREAM_VERSION: '1.131.0'
+    steps:
+      - name: Checkout fusionclaw pack tooling
+        uses: actions/checkout@v4
+        with:
+          repository: FusionClawAI/fusionclaw
+          ref: release
+          # A read-only PAT/deploy token for the private fusionclaw repo. Add it
+          # as a repository secret named FUSIONCLAW_PACK_TOOLING_TOKEN.
+          token: ${{ secrets.FUSIONCLAW_PACK_TOOLING_TOKEN }}
+          path: fusionclaw
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: fusionclaw/.nvmrc
+
+      - name: Install fusionclaw dependencies
+        working-directory: fusionclaw
+        run: npm ci
+
+      - name: Download server archives
+        uses: actions/download-artifact@v4
+        with:
+          path: server-archives
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::494378025116:role/fusionclaw-fusionide-runtime-publish-prod
+          aws-region: ${{ env.AWS_REGION }}
+
+      # Fetch the signing key and run build → sign → publish for every target in
+      # a single step, so the key lives only in this shell's env (never in
+      # GITHUB_ENV, never masked-but-persisted across steps).
+      - name: Build, sign, and publish FusionIDE packs
+        working-directory: fusionclaw
+        shell: bash
+        run: |
+          set -euo pipefail
+          export FUSIONCLAW_UPDATE_PRIVATE_KEY="$(aws secretsmanager get-secret-value \
+            --secret-id fusionclaw-update-publisher --region "$AWS_REGION" \
+            --query SecretString --output text \
+            | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>process.stdout.write(JSON.parse(s).signing_key))")"
+          test -n "$FUSIONCLAW_UPDATE_PRIVATE_KEY"
+
+          for target in windows-x64 linux-x64; do
+            archive="$GITHUB_WORKSPACE/server-archives/fusionide-server-$target/fusionide-server-$target.tar.gz"
+            if [ ! -f "$archive" ]; then
+              echo "No server archive for $target (build skipped/disabled); skipping."
+              continue
+            fi
+            work="$RUNNER_TEMP/server-$target"
+            rm -rf "$work"; mkdir -p "$work"
+            tar -xzf "$archive" -C "$work"
+            tree="$(find "$work" -maxdepth 1 -type d -name 'vscode-reh-web-*' | head -n1)"
+            test -n "$tree"
+            upstream="$(node -p "require('$tree/product.json').version" 2>/dev/null || echo "$UPSTREAM_VERSION")"
+
+            echo "::group::pack $target (upstream $upstream)"
+            npm run fusionide:pack:build -- --server-archive "$tree" --target "$target" --upstream-version "$upstream"
+            npm run fusionide:pack:sign -- --target "$target"
+            npm run fusionide:pack:publish -- --target "$target"
+            echo "::endgroup::"
+          done
+
+      - name: Verify published packs are anonymously available
+        working-directory: fusionclaw
+        shell: bash
+        run: |
+          set -euo pipefail
+          for target in windows-x64 linux-x64; do
+            if [ -f "release/fusionide/$target/manifest.json" ]; then
+              npm run fusionide:pack:check -- --target "$target"
+            fi
+          done

@@ -75,7 +75,7 @@ export class OutputMonitor extends Disposable implements IOutputMonitor {
 			return '<redacted>';
 		}
 		// Keep logs bounded.
-		return lastLine.length > 200 ? lastLine.slice(0, 200) + '…' : lastLine;
+		return lastLine.length > 200 ? lastLine.slice(0, 200) + '\u2026' : lastLine;
 	}
 
 	private _pollingResult: IPollingResult & { pollDurationMs: number } | undefined;
@@ -171,7 +171,7 @@ export class OutputMonitor extends Disposable implements IOutputMonitor {
 		// OutputMonitor is disposed before the deferred _startMonitoring fires.
 		// The registered disposable must cancel (not just dispose) the CTS so that
 		// the async monitoring loop's token becomes isCancellationRequested=true and
-		// the loop exits promptly — CancellationTokenSource.dispose() alone does
+		// the loop exits promptly \u2014 CancellationTokenSource.dispose() alone does
 		// not set isCancellationRequested.
 		const cts = new CancellationTokenSource(token);
 		this._currentMonitoringCts = cts;
@@ -383,9 +383,9 @@ export class OutputMonitor extends Disposable implements IOutputMonitor {
 
 		// Decide whether the current last line should fire an input-needed signal.
 		// Two acceptable conditions:
-		//   1. Strict high-confidence prompt (y/n, password, "(END)", etc.) — safe regardless
+		//   1. Strict high-confidence prompt (y/n, password, "(END)", etc.) \u2014 safe regardless
 		//      of execution-active state.
-		//   2. Broad fallback pattern (bare ":" / "?" trailers) — only safe when
+		//   2. Broad fallback pattern (bare ":" / "?" trailers) \u2014 only safe when
 		//      `execution.isActive() === true`, which provides independent evidence the
 		//      command is still consuming stdin. Without that guard the broad pattern
 		//      produces false positives on finished commands (issue #315476). The same
@@ -429,8 +429,8 @@ export class OutputMonitor extends Disposable implements IOutputMonitor {
 
 		// In foreground mode, fire the event so the race in runInTerminalTool can pick it
 		// up and return control to the agent (which uses send_to_terminal to provide input).
-		// For sensitive prompts (passwords, secrets, OTPs, …) we instead fire a separate
-		// event so the tool can show a confirmation dialog that focuses the terminal —
+		// For sensitive prompts (passwords, secrets, OTPs, \u2026) we instead fire a separate
+		// event so the tool can show a confirmation dialog that focuses the terminal \u2014
 		// the secret must never be routed through the model.
 		if (shouldFireInputNeeded) {
 			if (this._isSensitivePrompt(outputLastLine)) {
@@ -611,8 +611,8 @@ function isCanonicalSudoSPrompt(command: string, prompt: string): boolean {
 /**
  * Returns true when the terminal's last visible line looks like a prompt for
  * a sensitive secret (password, passphrase, token, API key, OTP, etc.). Used
- * to short-circuit the normal "input needed → return to agent" flow so that
- * the secret is never routed through the model — instead the user is asked
+ * to short-circuit the normal "input needed \u2192 return to agent" flow so that
+ * the secret is never routed through the model \u2014 instead the user is asked
  * via UI to focus the terminal and type the secret directly.
  */
 export function detectsSensitiveInputPrompt(cursorLine: string): boolean {
@@ -677,7 +677,7 @@ export function detectsHighConfidenceInputPattern(cursorLine: string): boolean {
 		// REQUIRES at least one space between the colon and the opening paren (`\s+`, not `\s*`)
 		// so this rule does not match git-aware shell prompts like
 		// allow-any-unicode-next-line
-		//   "➜  myrepo git:(main) "                    (oh-my-zsh / robbyrussell)
+		//   "\u279c  myrepo git:(main) "                    (oh-my-zsh / robbyrussell)
 		//   "[user@host ~/myrepo (main)]$ "
 		// where the colon abuts the paren with no separator. npm-init / yarn-init style
 		// prompts always render at least one space after the colon, so this stays specific
@@ -686,7 +686,7 @@ export function detectsHighConfidenceInputPattern(cursorLine: string): boolean {
 		// Line contains (END) which is common in pagers
 		/\(END\)$/,
 		// Password prompt. Requires a trailing colon (e.g. "Password:", "[sudo] password for user:")
-		// and tolerates zero or more trailing spaces — xterm's `translateToString(trimRight=true)`
+		// and tolerates zero or more trailing spaces \u2014 xterm's `translateToString(trimRight=true)`
 		// strips trailing whitespace from non-wrapped buffer lines, so a real `Password: ` prompt
 		// is captured from the buffer as `Password:` with no trailing space.
 		/password(?: for [^:]+)?:\s*$/i,
@@ -698,12 +698,12 @@ export function detectsHighConfidenceInputPattern(cursorLine: string): boolean {
 		// Anchoring the '?' to the start of the line (after optional whitespace/ANSI
 		// escapes) avoids false positives from normal output that contains both a '?'
 		// allow-any-unicode-next-line
-		// and a chevron (e.g. "What happened? ›").
+		// and a chevron (e.g. "What happened? \u203a").
 		// Examples:
 		//   "? Do you want to install jsdom? <chevron>"  (prompts)
 		//   "? Pick a color <chevron> "                  (enquirer)
 		// allow-any-unicode-next-line
-		/^(?:\s|\x1b\[[0-9;]*m)*\?.*[›❯▸▶]\s*$/,
+		/^(?:\s|\x1b\[[0-9;]*m)*\?.*[\u203a\u276f\u25b8\u25b6]\s*$/,
 	].some(e => e.test(cursorLine));
 }
 
@@ -714,7 +714,7 @@ export function detectsHighConfidenceInputPattern(cursorLine: string): boolean {
  * including unconditionally on the last line of a finished command.
  *
  * For the broader heuristics (bare `:` / `?` with trailing space), use
- * {@link detectsLikelyInputRequiredPattern} — but only from a call site that
+ * {@link detectsLikelyInputRequiredPattern} \u2014 but only from a call site that
  * has independent evidence the command is still running and consuming stdin
  * (e.g. `execution.isActive() === true`). Those broad patterns cannot
  * reliably distinguish a real prompt like `Enter your name: ` from log
@@ -733,7 +733,7 @@ export function detectsInputRequiredPattern(cursorLine: string): boolean {
  * on a single cursor line.
  *
  * Therefore this function is only safe to call when the caller has
- * independent evidence that the terminal is currently consuming stdin —
+ * independent evidence that the terminal is currently consuming stdin \u2014
  * specifically, `execution.isActive() === true` at a moment when the output
  * stream has been quiet (idle) for several poll intervals. `_waitForIdle`
  * applies that gate; new call sites should preserve it.
@@ -749,14 +749,14 @@ export function detectsLikelyInputRequiredPattern(cursorLine: string): boolean {
 		// Line ends with ':' followed by at least one space. The trailing space indicates a
 		// waiting prompt (cursor positioned after the colon). A bare ':\n' at end of buffer is
 		// usually non-prompt output (e.g. a header or log line) and must not match.
-		// NOTE: This is a broad pattern — only use when the caller has independent evidence
+		// NOTE: This is a broad pattern \u2014 only use when the caller has independent evidence
 		// (e.g. `isActive === true`) that the command is still consuming stdin. On a finished
 		// command, log output like `Last Command: ` is indistinguishable from a real prompt.
 		/: +$/,
 		// Line ends with '?' followed by at least one space (optionally followed by a
 		// parenthesized hint like "Continue? (yes/no) "). Requiring trailing space avoids
 		// matching arbitrary command output where a line happens to end with '?'.
-		// NOTE: This is a broad pattern — same caller-side guard required as above.
+		// NOTE: This is a broad pattern \u2014 same caller-side guard required as above.
 		/\? *(?:\([a-z\s]+\))? +$/i,
 	].some(e => e.test(cursorLine));
 }

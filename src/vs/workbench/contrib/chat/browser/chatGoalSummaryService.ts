@@ -89,7 +89,7 @@ export class ChatGoalSummaryService implements IChatGoalSummaryService {
 		const truncatedPrompt = prompt.length > MAX_PROMPT_CHARS ? prompt.slice(0, MAX_PROMPT_CHARS) + '...[truncated]' : prompt;
 		const systemPrompt = [
 			'You summarize a user\'s coding request into a single short phrase suitable for a status badge.',
-			'Reply with the phrase only — no prose, no quotes, no leading "Goal:", no punctuation at the end.',
+			'Reply with the phrase only \u2014 no prose, no quotes, no leading "Goal:", no punctuation at the end.',
 			'Use the imperative ("Add tests for X", "Fix the avatar popup bug").',
 			'Keep it under 80 characters. Prefer the user\'s own nouns and verbs.',
 			'This is a benign labeling task: never refuse or apologize. Always restate the request as a phrase, even if it seems unusual.',
@@ -145,7 +145,12 @@ export function cleanGoalSummary(raw: string): string | undefined {
 	}
 	// Strip surrounding quotes and any leading "Goal:" the model may have added.
 	s = s.replace(/^["'`]+|["'`]+$/g, '');
-	s = s.replace(/^\s*goal\s*[:\-—]\s*/i, '');
+	// --- Start FusionIDE ---
+	// The em dash is written as an escape: a literal one survives minification
+	// and trips the build's non-ASCII guard (build/lib/optimize.ts). Same match,
+	// ASCII source.
+	s = s.replace(/^\s*goal\s*[:\-\u2014]\s*/i, '');
+	// --- End FusionIDE ---
 	s = s.replace(/\s+/g, ' ').trim();
 	// The summary model occasionally declines to summarize (e.g. content
 	// filtering) and replies with a refusal like "Sorry, I can't assist with
@@ -155,7 +160,7 @@ export function cleanGoalSummary(raw: string): string | undefined {
 		return undefined;
 	}
 	if (s.length > MAX_SUMMARY_CHARS) {
-		s = s.slice(0, MAX_SUMMARY_CHARS - 1).replace(/\s+\S*$/, '') + '…';
+		s = s.slice(0, MAX_SUMMARY_CHARS - 1).replace(/\s+\S*$/, '') + '\u2026';
 	}
 	return s || undefined;
 }

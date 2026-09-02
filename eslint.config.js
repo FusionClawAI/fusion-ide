@@ -144,6 +144,33 @@ export default defineConfig(
 			]
 		},
 	},
+	// --- Start FusionIDE ---
+	// FusionIDE-authored sources carry FusionClaw's copyright, not Microsoft's.
+	// They stay header-checked, just against the fork's header: turning the rule
+	// off for them would let a file through with no header at all.
+	{
+		files: [
+			'build/fusionide/**/*.{js,mjs,ts}',
+			'src/vs/workbench/contrib/fusionide/**/*.ts',
+			'src/vs/**/fusionide*.ts',
+		],
+		plugins: {
+			'header': pluginHeader,
+		},
+		rules: {
+			'header/header': [
+				2,
+				'block',
+				[
+					'---------------------------------------------------------------------------------------------',
+					' *  Copyright (c) FusionClaw. All rights reserved.',
+					' *  Licensed under the MIT License. See License.txt in the project root for license information.',
+					' *--------------------------------------------------------------------------------------------'
+				]
+			]
+		},
+	},
+	// --- End FusionIDE ---
 	// TS
 	{
 		files: [
