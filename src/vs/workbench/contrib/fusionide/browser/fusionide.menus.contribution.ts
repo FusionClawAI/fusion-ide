@@ -8,6 +8,7 @@
 import { localize } from '../../../../nls.js';
 import { MenuId, MenuRegistry } from '../../../../platform/actions/common/actions.js';
 import { ContextKeyExpr } from '../../../../platform/contextkey/common/contextkey.js';
+import { IsSessionsWindowContext } from '../../../common/contextkeys.js';
 
 /**
  * Menubar entries for the FusionClaw commands.
@@ -76,7 +77,14 @@ const FUSIONCLAW_BRIDGE_READY = ContextKeyExpr.has('fusionclaw.bridgeReady');
 
 MenuRegistry.appendMenuItem(MenuId.MenubarMainMenu, {
 	submenu: FUSIONCLAW_TOOLS_MENU,
-	title: localize({ key: 'miFusionclawTools', comment: ['&& denotes a mnemonic'] }, "&&Tools"),
+	// An ILocalizedString, not a bare `localize(...)`: `MenubarControl.setupMainMenu`
+	// keeps only submenus whose `title` is an object (`typeof title !== 'string'`),
+	// so a plain string is dropped from the menu bar with no error anywhere.
+	title: {
+		value: 'Tools',
+		original: 'Tools',
+		mnemonicTitle: localize({ key: 'miFusionclawTools', comment: ['&& denotes a mnemonic'] }, "&&Tools"),
+	},
 	when: FUSIONCLAW_BRIDGE_READY,
 	order: 6
 });
@@ -98,10 +106,10 @@ const TOOL_ENTRIES: ReadonlyArray<{ id: string; title: string; group: string; or
 	{ id: 'fusionclaw.tools.ssh-connections', title: localize('miFusionclawSshConnections', "SSH Connections"), group: '1_create', order: 6 },
 	// Workspace intelligence
 	{ id: 'fusionclaw.tools.session-history', title: localize('miFusionclawSessionHistory', "Session History"), group: '2_workspace', order: 1 },
-	{ id: 'fusionclaw.tools.account-limits', title: localize('miFusionclawAccountLimits', "Account Limits"), group: '2_workspace', order: 2 },
-	{ id: 'fusionclaw.tools.graphify', title: localize('miFusionclawGraphify', "Graphify"), group: '2_workspace', order: 3 },
-	{ id: 'fusionclaw.tools.git-tree', title: localize('miFusionclawGitTree', "GitTree"), group: '2_workspace', order: 4 },
-	{ id: 'fusionclaw.tools.multi-monitor', title: localize('miFusionclawMultiMonitor', "Multi-Monitor Support"), group: '2_workspace', order: 5 },
+	{ id: 'fusionclaw.tools.fusion-memory', title: localize('miFusionclawFusionMemory', "FusionMemory"), group: '2_workspace', order: 2 },
+	{ id: 'fusionclaw.tools.account-limits', title: localize('miFusionclawAccountLimits', "Account Limits"), group: '2_workspace', order: 3 },
+	{ id: 'fusionclaw.tools.graphify', title: localize('miFusionclawGraphify', "Graphify"), group: '2_workspace', order: 4 },
+	{ id: 'fusionclaw.tools.git-tree', title: localize('miFusionclawGitTree', "GitTree"), group: '2_workspace', order: 5 },
 	// Observe
 	{ id: 'fusionclaw.tools.system-performance', title: localize('miFusionclawSystemPerformance', "System Performance"), group: '3_observe', order: 1 },
 	{ id: 'fusionclaw.tools.token-performance', title: localize('miFusionclawTokenPerformance', "Token Performance"), group: '3_observe', order: 2 },
@@ -120,6 +128,43 @@ for (const entry of TOOL_ENTRIES) {
 		group: entry.group,
 		command: { id: entry.id, title: entry.title },
 		when: FUSIONCLAW_BRIDGE_READY,
+		order: entry.order
+	});
+}
+
+/**
+ * Tools the desktop files under View rather than Tools, mirroring the ADE's
+ * own menu bar: Multi-Monitor Support arranges *windows*, so it belongs beside
+ * the other layout controls. The desktop's `VIEW_MENU_TOOL_IDS` is the source
+ * of that list and `tests/fusionide-fork-menu-contract.test.ts` pins this
+ * array against it.
+ *
+ * `7_fusionclaw` is a new trailing group: the View menu's core groups run
+ * `1_open` through `6_editor`, and `MenuInfo._compareMenuItems` orders groups
+ * lexically, so ours sorts last behind its own separator and cannot interleave
+ * with upstream entries on a rebase.
+ */
+const FUSIONCLAW_VIEW_GROUP = '7_fusionclaw';
+
+const VIEW_ENTRIES: ReadonlyArray<{ id: string; title: string; group: string; order: number }> = [
+	{ id: 'fusionclaw.tools.multi-monitor', title: localize('miFusionclawMultiMonitor', "Multi-Monitor Support"), group: FUSIONCLAW_VIEW_GROUP, order: 1 },
+];
+
+/**
+ * The agent-sessions window reuses `MenubarViewMenu` wholesale, so an entry
+ * that means nothing there has to opt out the way core does for Appearance and
+ * Editor Layout.
+ */
+const FUSIONCLAW_VIEW_WHEN = ContextKeyExpr.and(
+	FUSIONCLAW_BRIDGE_READY,
+	IsSessionsWindowContext.negate()
+);
+
+for (const entry of VIEW_ENTRIES) {
+	MenuRegistry.appendMenuItem(MenuId.MenubarViewMenu, {
+		group: entry.group,
+		command: { id: entry.id, title: entry.title },
+		when: FUSIONCLAW_VIEW_WHEN,
 		order: entry.order
 	});
 }
