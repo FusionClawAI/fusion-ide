@@ -105,11 +105,10 @@ const TOOL_ENTRIES: ReadonlyArray<{ id: string; title: string; group: string; or
 	{ id: 'fusionclaw.tools.download-manager', title: localize('miFusionclawDownloadManager', "Download Manager"), group: '1_create', order: 5 },
 	{ id: 'fusionclaw.tools.ssh-connections', title: localize('miFusionclawSshConnections', "SSH Connections"), group: '1_create', order: 6 },
 	// Workspace intelligence
-	{ id: 'fusionclaw.tools.session-history', title: localize('miFusionclawSessionHistory', "Session History"), group: '2_workspace', order: 1 },
-	{ id: 'fusionclaw.tools.fusion-memory', title: localize('miFusionclawFusionMemory', "FusionMemory"), group: '2_workspace', order: 2 },
-	{ id: 'fusionclaw.tools.account-limits', title: localize('miFusionclawAccountLimits', "Account Limits"), group: '2_workspace', order: 3 },
-	{ id: 'fusionclaw.tools.graphify', title: localize('miFusionclawGraphify', "Graphify"), group: '2_workspace', order: 4 },
-	{ id: 'fusionclaw.tools.git-tree', title: localize('miFusionclawGitTree', "GitTree"), group: '2_workspace', order: 5 },
+	{ id: 'fusionclaw.tools.fusion-memory', title: localize('miFusionclawFusionMemory', "FusionMemory"), group: '2_workspace', order: 1 },
+	{ id: 'fusionclaw.tools.account-limits', title: localize('miFusionclawAccountLimits', "Account Limits"), group: '2_workspace', order: 2 },
+	{ id: 'fusionclaw.tools.graphify', title: localize('miFusionclawGraphify', "Graphify"), group: '2_workspace', order: 3 },
+	{ id: 'fusionclaw.tools.git-tree', title: localize('miFusionclawGitTree', "FusionGit"), group: '2_workspace', order: 4 },
 	// Observe
 	{ id: 'fusionclaw.tools.system-performance', title: localize('miFusionclawSystemPerformance', "System Performance"), group: '3_observe', order: 1 },
 	{ id: 'fusionclaw.tools.token-performance', title: localize('miFusionclawTokenPerformance', "Token Performance"), group: '3_observe', order: 2 },
