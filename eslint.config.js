@@ -154,9 +154,6 @@ export default defineConfig(
 			'src/vs/workbench/contrib/fusionide/**/*.ts',
 			'src/vs/**/fusionide*.ts',
 		],
-		plugins: {
-			'header': pluginHeader,
-		},
 		rules: {
 			'header/header': [
 				2,
