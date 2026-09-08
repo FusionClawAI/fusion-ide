@@ -432,7 +432,7 @@ export class ModelPickerWidget extends Disposable {
 		const onConfigure = (model: ILanguageModelChatMetadataAndIdentifier, group: string) => {
 			onSelect(model);
 			this._actionWidgetService.hide();
-			this._configuration.show(this._configButton, group);
+			this._configuration.show(this._configButton, group, anchorElement);
 		};
 
 		const models = this._delegate.getModels();

@@ -110,8 +110,18 @@ export class ModelPickerConfiguration {
 		button.ariaLabel = ariaParts.join(', ');
 	}
 
-	show(button: HTMLElement | undefined, focusGroup?: string): void {
-		if (this._host.isDisabled() || !button || !this._host.getSelectedModel()) {
+	show(button: HTMLElement | undefined, focusGroup?: string, fallbackAnchor?: HTMLElement): void {
+		// Compact toolbars hide (or detach) the inline configuration button. The
+		// model picker still offers configuration from its hover, so keep that
+		// popup attached to the visible control that opened the model picker.
+		const anchor = [button, fallbackAnchor].find(element => {
+			if (!element?.isConnected) {
+				return false;
+			}
+			const bounds = element.getBoundingClientRect();
+			return bounds.width > 0 && bounds.height > 0;
+		});
+		if (this._host.isDisabled() || !anchor || !this._host.getSelectedModel()) {
 			return;
 		}
 
@@ -128,21 +138,23 @@ export class ModelPickerConfiguration {
 				this._actionWidgetService.updateItems(this._buildItems(), action.id);
 			},
 			onHide: () => {
-				button.setAttribute('aria-expanded', 'false');
-				if (dom.isHTMLElement(previouslyFocusedElement)) {
+				anchor.setAttribute('aria-expanded', 'false');
+				if (dom.isHTMLElement(previouslyFocusedElement) && previouslyFocusedElement.isConnected) {
 					previouslyFocusedElement.focus();
+				} else if (anchor.isConnected) {
+					anchor.focus();
 				}
 			}
 		};
 
-		button.setAttribute('aria-expanded', 'true');
+		anchor.setAttribute('aria-expanded', 'true');
 		const showCacheBreakHint = this._host.shouldShowCacheBreakHint();
 		this._actionWidgetService.show(
 			'ChatModelConfigPicker',
 			false,
 			items,
 			delegate,
-			button,
+			anchor,
 			undefined,
 			[],
 			{

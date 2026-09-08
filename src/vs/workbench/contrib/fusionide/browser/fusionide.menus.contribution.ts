@@ -98,12 +98,9 @@ MenuRegistry.appendMenuItem(MenuId.MenubarMainMenu, {
  */
 const TOOL_ENTRIES: ReadonlyArray<{ id: string; title: string; group: string; order: number }> = [
 	// Create & automate
-	{ id: 'fusionclaw.tools.skill-forge', title: localize('miFusionclawSkillManager', "Skill Manager"), group: '1_create', order: 1 },
-	{ id: 'fusionclaw.tools.frontend-studio', title: localize('miFusionclawFrontendTools', "Frontend Tools"), group: '1_create', order: 2 },
-	{ id: 'fusionclaw.tools.fusion-prototyper', title: localize('miFusionclawPrototyper', "Fusion Prototyper"), group: '1_create', order: 3 },
-	{ id: 'fusionclaw.tools.loop-engineering', title: localize('miFusionclawLoopEngineering', "Loop Engineering"), group: '1_create', order: 4 },
-	{ id: 'fusionclaw.tools.download-manager', title: localize('miFusionclawDownloadManager', "Download Manager"), group: '1_create', order: 5 },
-	{ id: 'fusionclaw.tools.ssh-connections', title: localize('miFusionclawSshConnections', "SSH Connections"), group: '1_create', order: 6 },
+	{ id: 'fusionclaw.tools.loop-engineering', title: localize('miFusionclawLoopEngineering', "Loop Build"), group: '1_create', order: 1 },
+	{ id: 'fusionclaw.tools.download-manager', title: localize('miFusionclawDownloadManager', "Download Manager"), group: '1_create', order: 2 },
+	{ id: 'fusionclaw.tools.ssh-connections', title: localize('miFusionclawSshConnections', "SSH Connections"), group: '1_create', order: 3 },
 	// Workspace intelligence
 	{ id: 'fusionclaw.tools.fusion-memory', title: localize('miFusionclawFusionMemory', "FusionMemory"), group: '2_workspace', order: 1 },
 	{ id: 'fusionclaw.tools.account-limits', title: localize('miFusionclawAccountLimits', "Account Limits"), group: '2_workspace', order: 2 },

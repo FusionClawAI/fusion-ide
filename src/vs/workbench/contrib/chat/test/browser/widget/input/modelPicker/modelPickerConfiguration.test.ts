@@ -130,9 +130,12 @@ function render(model: ILanguageModelChatMetadataAndIdentifier, configuration: R
 		dismissCacheBreakHint: () => { },
 	}, actionWidgetService, { publicLog2: () => { } } as unknown as ITelemetryService);
 	const button = document.createElement('a');
+	button.style.cssText = 'display: inline-block; width: 120px; height: 28px';
+	document.body.appendChild(button);
 
 	controller.renderButton(button, false, false);
 	controller.show(button);
+	button.remove();
 
 	return {
 		label: button.textContent,
@@ -152,6 +155,58 @@ function render(model: ILanguageModelChatMetadataAndIdentifier, configuration: R
 suite('ModelPickerConfiguration', () => {
 
 	ensureNoDisposablesAreLeakedInTestSuite();
+
+	for (const presentation of ['hidden', 'detached'] as const) {
+		test(`anchors compact configuration to the visible overflow control when its button is ${presentation}`, async () => {
+			const configuration = { effort: 'low' };
+			const button = document.createElement('button');
+			const overflow = document.createElement('button');
+			overflow.textContent = 'More Actions';
+			document.body.appendChild(overflow);
+			if (presentation === 'hidden') {
+				button.style.display = 'none';
+				document.body.appendChild(button);
+			}
+			let shownAnchor: unknown;
+			let shownItems: IActionListItem<IActionWidgetDropdownAction>[] = [];
+			let onHide: (() => void) | undefined;
+			const controller = new ModelPickerConfiguration({
+				getSelectedModel: () => createModel(),
+				getConfigurationAccess: () => ({
+					getModelConfiguration: () => configuration,
+					setModelConfiguration: async (_modelId, values) => { Object.assign(configuration, values); },
+					getModelConfigurationActions: () => [],
+				}),
+				isDisabled: () => false,
+				shouldShowCacheBreakHint: () => false,
+				getCacheBreakLearnMoreLink: () => undefined,
+				dismissCacheBreakHint: () => { },
+			}, {
+				show: (_id: string, _supportsPreview: boolean, items: IActionListItem<IActionWidgetDropdownAction>[], delegate: { onHide: () => void }, anchor: unknown) => {
+					shownItems = items;
+					shownAnchor = anchor;
+					onHide = delegate.onHide;
+				},
+				focusItemById: () => { },
+			} as unknown as IActionWidgetService, { publicLog2: () => { } } as unknown as ITelemetryService);
+			try {
+				overflow.focus();
+				controller.show(button, 'navigation', overflow);
+				await shownItems.find(item => item.item?.id === 'navigation.medium')?.item?.run();
+				assert.deepStrictEqual({
+					usesOverflow: shownAnchor === overflow,
+					choices: shownItems.filter(item => item.kind === ActionListItemKind.Action).map(item => item.label),
+					selected: configuration.effort,
+					expanded: overflow.getAttribute('aria-expanded'),
+				}, { usesOverflow: true, choices: ['Low', 'Medium', '32K', '64K'], selected: 'medium', expanded: 'true' });
+				onHide?.();
+				assert.deepStrictEqual({ expanded: overflow.getAttribute('aria-expanded'), focusRestored: document.activeElement === overflow }, { expanded: 'false', focusRestored: true });
+			} finally {
+				button.remove();
+				overflow.remove();
+			}
+		});
+	}
 
 	test('renders the combined label and builds accessible option sections', () => {
 		assert.deepStrictEqual(render(createModel(), { effort: 'medium', context: 65536 }), {
