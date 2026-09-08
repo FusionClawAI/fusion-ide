@@ -1,0 +1,28 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License. See License.txt in the project root for license information.
+version: 0.2
+env:
+  shell: bash
+  variables:
+    PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+    ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+    NODE_OPTIONS: --max-old-space-size=12288
+phases:
+  install:
+    runtime-versions:
+      nodejs: 24
+    commands:
+      - n "$(cat .nvmrc)"
+      - apt-get update -qq
+      - apt-get install -y libxkbfile-dev pkg-config libkrb5-dev libxss1 libsecret-1-dev xvfb
+      - npm ci
+  build:
+    commands:
+      - npm run typecheck-client
+      - npm run vscode-dts-compile-check
+      - npm run monaco-compile-check
+      - npm run test-build-scripts
+      - npm run transpile-client
+      - npm run test-node
+      - npm exec playwright install -- --with-deps chromium
+      - xvfb-run -a npm run test-browser-no-install -- --browser chromium

@@ -1,0 +1,72 @@
+name: FusionIDE macOS runtime build
+run-name: FusionIDE pack macOS ${{ inputs.pack_version }} / ${{ inputs.pipeline_execution_id }}
+on:
+  workflow_dispatch:
+    inputs:
+      pack_version:
+        required: true
+        type: string
+      source_commit:
+        required: true
+        type: string
+      pipeline_execution_id:
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: fusionide-macos-release
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: macos-15
+    environment: fusionide-macos-release
+    timeout-minutes: 140
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      PACK_VERSION: ${{ inputs.pack_version }}
+      SOURCE_COMMIT: ${{ inputs.source_commit }}
+      PIPELINE_EXECUTION_ID: ${{ inputs.pipeline_execution_id }}
+    steps:
+      - name: Validate native build inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/mac-release
+          [[ "$PACK_VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+          [[ "$SOURCE_COMMIT" =~ ^[0-9a-fA-F]{40}$ ]]
+          [[ "$PIPELINE_EXECUTION_ID" =~ ^[A-Za-z0-9-]{8,128}$ ]]
+          test "$(uname -m)" = arm64
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_commit }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Build native reh-web server
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          npm ci --prefix build
+          node build/npm/preinstall.ts
+          npm ci
+          node build/fusionide/apply-product-overlay.mjs
+          node build/fusionide/apply-product-overlay.mjs --check
+          npm run gulp -- vscode-reh-web-darwin-arm64-min
+          test -f ../vscode-reh-web-darwin-arm64/out/server-main.js
+          tar -czf fusionide-server-darwin-arm64.tar.gz -C .. vscode-reh-web-darwin-arm64
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::494378025116:role/fusionide-mac-staging-prod
+          aws-region: us-east-1
+      - name: Upload unsigned server to private AWS staging
+        shell: bash
+        run: |
+          set -euo pipefail
+          aws s3 cp fusionide-server-darwin-arm64.tar.gz "s3://serverless-fusionclaw-artifacts/fusionide-mac-staging/$PIPELINE_EXECUTION_ID/fusionide-server-darwin-arm64.tar.gz" --only-show-errors
