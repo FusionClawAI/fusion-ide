@@ -226,18 +226,23 @@ abstract class OpenChatGlobalAction extends Action2 {
 	override async run(accessor: ServicesAccessor, opts?: string | IChatViewOpenOptions): Promise<IChatAgentResult & { type?: 'confirmation' } | undefined> {
 		opts = typeof opts === 'string' ? { query: opts } : opts;
 
+		const configurationService = accessor.get(IConfigurationService);
+		const commandService = accessor.get(ICommandService);
+		if (configurationService.getValue('fusionclaw.chat.unifiedPanel') === true) {
+			await commandService.executeCommand('fusionclaw.chat.focus');
+			return;
+		}
+
 		const chatService = accessor.get(IChatService);
 		const widgetService = accessor.get(IChatWidgetService);
 		const toolsService = accessor.get(ILanguageModelToolsService);
 		const hostService = accessor.get(IHostService);
 		const chatAgentService = accessor.get(IChatAgentService);
 		const instaService = accessor.get(IInstantiationService);
-		const commandService = accessor.get(ICommandService);
 		const fileService = accessor.get(IFileService);
 		const languageModelService = accessor.get(ILanguageModelsService);
 		const scmService = accessor.get(ISCMService);
 		const logService = accessor.get(ILogService);
-		const configurationService = accessor.get(IConfigurationService);
 
 		let chatWidget = widgetService.lastFocusedWidget;
 		// When this was invoked to switch to a mode via keybinding, and some chat widget is focused, use that one.
@@ -629,6 +634,10 @@ export function registerChatActions() {
 		}
 
 		async run(accessor: ServicesAccessor) {
+			if (accessor.get(IConfigurationService).getValue('fusionclaw.chat.unifiedPanel') === true) {
+				await accessor.get(ICommandService).executeCommand('fusionclaw.chat.focus');
+				return;
+			}
 			const layoutService = accessor.get(IWorkbenchLayoutService);
 			const viewsService = accessor.get(IViewsService);
 			const viewDescriptorService = accessor.get(IViewDescriptorService);

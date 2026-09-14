@@ -27,4 +27,16 @@ suite('NLS', () => {
 		const args = ['a0', 'a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'a10'];
 		strictEqual(localize2('key3', '{10}', ...args).value, 'a10');
 	});
+
+	test('brands UI templates without rewriting interpolated content', () => {
+		strictEqual(localize('fusionide.brand', 'Get Started with VS Code: {0}', 'VS Code notes.md'), 'Get Started with FusionIDE: VS Code notes.md');
+		strictEqual(localize('fusionide.brand.long', 'Welcome to Visual Studio Code'), 'Welcome to FusionIDE');
+		strictEqual(localize2('fusionide.brand.command', 'About VSCode').value, 'About FusionIDE');
+		strictEqual(localize2('fusionide.brand.command', 'About VSCode').original, 'About FusionIDE');
+	});
+
+	test('preserves technical identifiers, links and attribution', () => {
+		const message = 'Use `VSCode` and vscode.Uri. https://example.com/VSCode built on the open-source Code - OSS core';
+		strictEqual(localize('fusionide.brand.technical', 'Use `VSCode` and vscode.Uri. https://example.com/VSCode built on the open-source Code - OSS core'), message);
+	});
 });

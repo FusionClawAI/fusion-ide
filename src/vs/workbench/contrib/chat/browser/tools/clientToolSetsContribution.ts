@@ -80,7 +80,7 @@ export class ClientToolSetsContribution extends Disposable implements IWorkbench
 		this._register(this._registerDynamicToolSet(toolsService, {
 			id: 'vscode-general',
 			referenceName: 'vscodeGeneral',
-			icon: Codicon.vscode,
+			icon: Codicon.code,
 			description: localize('clientToolSet.vscode.description', "VS Code"),
 			detail: localize('clientToolSet.vscode.detail', "Navigate code, manage extensions, and run built-in VS Code commands."),
 			members: [

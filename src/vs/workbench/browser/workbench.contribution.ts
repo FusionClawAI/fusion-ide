@@ -895,6 +895,15 @@ const registry = Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Con
 					localize({ key: 'window.commandCenter', comment: ['{0}, {1} is a placeholder for a setting identifier.'] }, "Show command launcher together with the window title. This setting only has an effect when {0} is not set to {1}.", '`#window.customTitleBarVisibility#`', '`never`'),
 				agentsWindow: { default: false, readOnly: true },
 			},
+			// --- Start FusionIDE ---
+			[LayoutSettings.FUSIONIDE_RETRACTABLE_MENU_BAR]: {
+				type: 'boolean',
+				default: false,
+				scope: ConfigurationScope.APPLICATION,
+				included: isWeb,
+				description: localize('fusionide.retractableMenuBar', "Show the FusionIDE menus in a thin header with a button to expand or collapse it."),
+			},
+			// --- End FusionIDE ---
 			'window.menuBarVisibility': {
 				'type': 'string',
 				'enum': ['classic', 'visible', 'toggle', 'hidden', 'compact'],

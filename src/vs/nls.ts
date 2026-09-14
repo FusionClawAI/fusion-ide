@@ -25,6 +25,11 @@ export interface ILocalizedString {
 }
 
 function _format(message: string, args: (string | number | boolean | undefined | null)[]): string {
+	// Brand UI templates before interpolating arguments: file names, extension
+	// output and user text must retain their original spelling. Keep technical
+	// identifiers (vscode.*), URLs and the Code - OSS attribution unchanged.
+	message = message.replace(/`[^`]*`|[a-z][a-z\d+.-]*:\/\/[^\s<>()]+|\b(?:Visual Studio Code|VS Code|VSCode)\b/g,
+		match => /^(?:Visual Studio Code|VS Code|VSCode)$/.test(match) ? 'FusionIDE' : match);
 	let result: string;
 
 	if (args.length === 0) {

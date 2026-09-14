@@ -52,7 +52,6 @@ export const ICONS = [
 	Codicon.remoteExplorer,
 	Codicon.github,
 	Codicon.azure,
-	Codicon.vscode,
 	Codicon.copilot,
 
 	/* misc */

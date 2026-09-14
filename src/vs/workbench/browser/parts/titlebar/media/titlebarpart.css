@@ -111,6 +111,48 @@
 	padding-left: 16px; /* ensure there is some space between title and controls */
 }
 
+/* --- Start FusionIDE --- */
+/* Embedded windows already have their title and tools in the desktop shell. */
+.monaco-workbench .part.titlebar > .titlebar-container.fusionide-retractable-menubar > .titlebar-left {
+	flex: 1 1 0%;
+	width: auto;
+	min-width: 0;
+}
+
+.monaco-workbench .part.titlebar > .titlebar-container.fusionide-retractable-menubar > .titlebar-center,
+.monaco-workbench .part.titlebar > .titlebar-container.fusionide-retractable-menubar > .titlebar-right,
+.monaco-workbench .part.titlebar > .titlebar-container.fusionide-retractable-menubar .window-appicon,
+.monaco-workbench .part.titlebar > .titlebar-container.fusionide-retractable-menubar .fusionclaw-credits {
+	display: none;
+}
+
+.monaco-workbench .part.titlebar .fusionide-menubar-toggle {
+	-webkit-app-region: no-drag;
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 var(--vscode-spacing-size280, 28px);
+	height: 100%;
+	padding: 0;
+	margin: 0 var(--vscode-spacing-size40, 4px);
+	border: none;
+	border-radius: var(--vscode-cornerRadius-small, 4px);
+	background: transparent;
+	color: var(--vscode-titleBar-activeForeground);
+	cursor: pointer;
+}
+
+.monaco-workbench .part.titlebar .fusionide-menubar-toggle:hover {
+	background: var(--vscode-toolbar-hoverBackground);
+}
+
+.monaco-workbench .part.titlebar .fusionide-menubar-toggle:focus-visible {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: -1px;
+}
+/* --- End FusionIDE --- */
+
 /* Window title text */
 .monaco-workbench .part.titlebar > .titlebar-container > .titlebar-center > .window-title {
 	flex: 0 1 auto;

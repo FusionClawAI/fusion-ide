@@ -58,6 +58,7 @@ import { safeIntl } from '../../../../base/common/date.js';
 import { IsCompactTitleBarContext, TitleBarVisibleContext } from '../../../common/contextkeys.js';
 // --- Start FusionIDE ---
 import { FusionclawCreditsWidget } from './fusionideCredits.js';
+import { FusionideMenubarToggle } from './fusionideMenubarToggle.js';
 // --- End FusionIDE ---
 import { ServiceCollection } from '../../../../platform/instantiation/common/serviceCollection.js';
 import { WORKBENCH_MENU_MOTION_CLASS, workbenchMenuCloseAnimation } from '../../actions/menuMotion.js';
@@ -237,6 +238,11 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 	get minimumHeight(): number {
 		const wcoEnabled = isWeb && isWCOEnabled();
 		let value = this.isCommandCenterVisible || wcoEnabled ? DEFAULT_CUSTOM_TITLEBAR_HEIGHT : 30;
+		// --- Start FusionIDE ---
+		if (this.isRetractableMenubar) {
+			value = this.fusionideMenubarToggle.value?.height ?? 28;
+		}
+		// --- End FusionIDE ---
 		if (wcoEnabled) {
 			value = Math.max(value, getWCOTitlebarAreaRect(getWindow(this.element))?.height ?? 0);
 		}
@@ -270,6 +276,9 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 
 	protected readonly customMenubar = this._register(new MutableDisposable<CustomMenubarControl>());
 	private readonly customMenubarDisposables = this._register(new DisposableStore());
+	// --- Start FusionIDE ---
+	private readonly fusionideMenubarToggle = this._register(new MutableDisposable<FusionideMenubarToggle>());
+	// --- End FusionIDE ---
 	protected appIcon: HTMLElement | undefined;
 	private appIconBadge: HTMLElement | undefined;
 	protected menubar?: HTMLElement;
@@ -385,13 +394,17 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 
 		// Custom menu bar (disabled if auxiliary)
 		if (!this.isAuxiliary && !hasNativeMenu(this.configurationService, this.titleBarStyle) && (!isMacintosh || isWeb)) {
-			if (event.affectsConfiguration(MenuSettings.MenuBarVisibility)) {
+			// --- Start FusionIDE ---
+			if (event.affectsConfiguration(MenuSettings.MenuBarVisibility) || event.affectsConfiguration(LayoutSettings.FUSIONIDE_RETRACTABLE_MENU_BAR)) {
 				if (this.currentMenubarVisibility === 'compact') {
 					this.uninstallMenubar();
 				} else {
 					this.installMenubar();
 				}
+				this.updateFusionideMenubar();
+				this._onDidChange.fire(undefined);
 			}
+			// --- End FusionIDE ---
 		}
 
 		// Actions
@@ -443,10 +456,37 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 
 		this.customMenubarDisposables.add(customMenubar.onVisibilityChange(e => this.onMenubarVisibilityChanged(e)));
 
+		// --- Start FusionIDE ---
+		this.updateFusionideMenubar();
+		// --- End FusionIDE ---
 		customMenubar.create(this.menubar);
 	}
 
+	// --- Start FusionIDE ---
+	private get isRetractableMenubar(): boolean {
+		return isWeb && !this.isAuxiliary && this.configurationService.getValue<boolean>(LayoutSettings.FUSIONIDE_RETRACTABLE_MENU_BAR) === true;
+	}
+
+	private updateFusionideMenubar(): void {
+		this.rootContainer.classList.toggle('fusionide-retractable-menubar', this.isRetractableMenubar);
+		if (this.isRetractableMenubar && this.customMenubar.value && this.menubar) {
+			if (!this.fusionideMenubarToggle.value) {
+				this.fusionideMenubarToggle.value = this.instantiationService.createInstance(
+					FusionideMenubarToggle, this.rootContainer, this.customMenubar.value, this.menubar,
+					() => this._onDidChange.fire(undefined),
+				);
+			}
+		} else {
+			this.fusionideMenubarToggle.clear();
+			this.customMenubar.value?.setVisibilityOverride(undefined);
+		}
+	}
+	// --- End FusionIDE ---
+
 	private uninstallMenubar(): void {
+		// --- Start FusionIDE ---
+		this.fusionideMenubarToggle.clear();
+		// --- End FusionIDE ---
 		this.customMenubarDisposables.clear();
 		this.customMenubar.clear();
 
@@ -901,6 +941,11 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 		if (this.isAuxiliary) {
 			return 'hidden';
 		}
+		// --- Start FusionIDE ---
+		if (this.isRetractableMenubar) {
+			return 'visible';
+		}
+		// --- End FusionIDE ---
 
 		return getMenuBarVisibility(this.configurationService);
 	}

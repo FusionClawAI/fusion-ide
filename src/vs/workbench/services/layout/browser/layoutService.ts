@@ -49,6 +49,9 @@ export const enum LayoutSettings {
 	EDITOR_TABS_MODE = 'workbench.editor.showTabs',
 	EDITOR_ACTIONS_LOCATION = 'workbench.editor.editorActionsLocation',
 	COMMAND_CENTER = 'window.commandCenter',
+	// --- Start FusionIDE ---
+	FUSIONIDE_RETRACTABLE_MENU_BAR = 'fusionclaw.window.retractableMenuBar',
+	// --- End FusionIDE ---
 	LAYOUT_ACTIONS = 'workbench.layoutControl.enabled',
 	SHADOWS = 'workbench.shadows',
 	MODERN_UI = 'workbench.experimental.modernUI',
@@ -718,6 +721,12 @@ export function shouldShowCustomTitleBar(configurationService: IConfigurationSer
 	if (!hasCustomTitlebar(configurationService)) {
 		return false;
 	}
+	// --- Start FusionIDE ---
+	// Keep the disclosure button reachable when the embedded menu is collapsed.
+	if (isWeb && !isAuxiliaryWindow(window) && configurationService.getValue<boolean>(LayoutSettings.FUSIONIDE_RETRACTABLE_MENU_BAR)) {
+		return true;
+	}
+	// --- End FusionIDE ---
 
 	const inFullscreen = isFullscreen(window);
 	const nativeTitleBarEnabled = hasNativeTitlebar(configurationService);

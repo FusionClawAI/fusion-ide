@@ -323,6 +323,18 @@ function enableFocusMenuBarAction(): Emitter<void> {
 }
 
 export class CustomMenubarControl extends MenubarControl {
+	// --- Start FusionIDE ---
+	private visibilityOverride: MenuBarVisibility | undefined;
+
+	/** A presentation override for this titlebar only; user menu settings stay intact. */
+	setVisibilityOverride(visibility: MenuBarVisibility | undefined): void {
+		this.visibilityOverride = visibility;
+		if (visibility === 'toggle') {
+			this.menubar?.blur();
+		}
+		this.menubar?.update(this.getMenuBarOptions());
+	}
+	// --- End FusionIDE ---
 	private menubar: MenuBar | undefined;
 	private container: HTMLElement | undefined;
 	private alwaysOnMnemonics: boolean = false;
@@ -426,7 +438,9 @@ export class CustomMenubarControl extends MenubarControl {
 	}
 
 	private get currentMenubarVisibility(): MenuBarVisibility {
-		return getMenuBarVisibility(this.configurationService);
+		// --- Start FusionIDE ---
+		return this.visibilityOverride ?? getMenuBarVisibility(this.configurationService);
+		// --- End FusionIDE ---
 	}
 
 	private get currentDisableMenuBarAltFocus(): boolean {

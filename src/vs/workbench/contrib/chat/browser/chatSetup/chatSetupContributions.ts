@@ -90,6 +90,11 @@ export class ChatSetupContribution extends Disposable implements IWorkbenchContr
 
 		const context = chatEntitlementService.context?.value;
 		const requests = chatEntitlementService.requests?.value;
+		// FusionIDE's own bridge provides account setup and agents. The upstream
+		// setup participants (@vscode, @workspace, @terminal) cannot serve it.
+		if (product.defaultChatAgent?.chatExtensionId === 'fusionclaw.fusionide-bridge') {
+			return;
+		}
 		if (!context || !requests) {
 			return; // disabled
 		}

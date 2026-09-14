@@ -1478,7 +1478,7 @@ export class ChatEntitlementContext extends Disposable {
 
 	private registerListeners(): void {
 		this._register(this.configurationService.onDidChangeConfiguration(e => {
-			if (e.affectsConfiguration(ChatAIDisabledSettingId)) {
+			if (e.affectsConfiguration(ChatAIDisabledSettingId) || e.affectsConfiguration('fusionclaw.chat.unifiedPanel')) {
 				this.updateContext();
 			}
 		}));
@@ -1487,7 +1487,8 @@ export class ChatEntitlementContext extends Disposable {
 	private _forceHidden = false;
 
 	private withConfiguration(state: IChatEntitlementContextState): IChatEntitlementContextState {
-		if (this._forceHidden || this.configurationService.getValue(ChatAIDisabledSettingId) === true) {
+		if (this._forceHidden || this.configurationService.getValue(ChatAIDisabledSettingId) === true
+			|| this.configurationService.getValue('fusionclaw.chat.unifiedPanel') === true) {
 			return {
 				...state,
 				hidden: true
