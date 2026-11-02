@@ -4,7 +4,10 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { localize, localize2 } from '../../../../nls.js';
-import { GettingStartedInputSerializer, GettingStartedPage, inWelcomeContext } from './gettingStarted.js';
+import { GettingStartedPage, inWelcomeContext } from './gettingStarted.js';
+// --- Start FusionIDE ---
+import { GettingStartedInputSerializer } from './gettingStartedInputSerializer.js';
+// --- End FusionIDE ---
 import { Registry } from '../../../../platform/registry/common/platform.js';
 import { EditorExtensions, IEditorFactoryRegistry } from '../../../common/editor.js';
 import { MenuId, registerAction2, Action2 } from '../../../../platform/actions/common/actions.js';

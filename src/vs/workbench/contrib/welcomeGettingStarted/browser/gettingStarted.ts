@@ -55,7 +55,7 @@ import { OpenRecentAction } from '../../../browser/actions/windowActions.js';
 import { OpenFileFolderAction, OpenFolderAction, OpenFolderViaWorkspaceAction } from '../../../browser/actions/workspaceActions.js';
 import { EditorPane } from '../../../browser/parts/editor/editorPane.js';
 import { WorkbenchStateContext } from '../../../common/contextkeys.js';
-import { IEditorOpenContext, IEditorSerializer } from '../../../common/editor.js';
+import { IEditorOpenContext } from '../../../common/editor.js';
 import { IWebviewElement, IWebviewService } from '../../webview/browser/webview.js';
 import './gettingStartedColors.js';
 import { GettingStartedDetailsRenderer } from './gettingStartedDetailsRenderer.js';
@@ -1773,29 +1773,6 @@ export class GettingStartedPage extends EditorPane {
 	}
 }
 
-export class GettingStartedInputSerializer implements IEditorSerializer {
-	public canSerialize(editorInput: GettingStartedInput): boolean {
-		return true;
-	}
-
-	public serialize(editorInput: GettingStartedInput): string {
-		return JSON.stringify({ selectedCategory: editorInput.selectedCategory, selectedStep: editorInput.selectedStep });
-	}
-
-	public deserialize(instantiationService: IInstantiationService, serializedEditorInput: string): GettingStartedInput | undefined {
-
-		return instantiationService.invokeFunction(accessor => {
-			// --- Start FusionIDE ---
-			if (accessor.get(IConfigurationService).getValue<string>('workbench.startupEditor') === 'none') {
-				return undefined;
-			}
-			// --- End FusionIDE ---
-			try {
-				const { selectedCategory, selectedStep } = JSON.parse(serializedEditorInput);
-				return new GettingStartedInput({ selectedCategory, selectedStep });
-			} catch { }
-			return new GettingStartedInput({});
-
-		});
-	}
-}
+// --- Start FusionIDE ---
+// Startup serialization is isolated in gettingStartedInputSerializer.ts.
+// --- End FusionIDE ---

@@ -10,7 +10,7 @@ import { IConfigurationService } from '../../../../../platform/configuration/com
 import { TestConfigurationService } from '../../../../../platform/configuration/test/common/testConfigurationService.js';
 import { InstantiationService } from '../../../../../platform/instantiation/common/instantiationService.js';
 import { ServiceCollection } from '../../../../../platform/instantiation/common/serviceCollection.js';
-import { GettingStartedInputSerializer } from '../../browser/gettingStarted.js';
+import { GettingStartedInputSerializer } from '../../browser/gettingStartedInputSerializer.js';
 
 suite('FusionIDE startup restoration', () => {
 	const store = ensureNoDisposablesAreLeakedInTestSuite();

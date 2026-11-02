@@ -463,7 +463,7 @@ suite('aiCustomizationManagementEditor', () => {
 			assert.deepStrictEqual({ userData, prompts }, {
 				userData: {
 					title: '2 customizations are not available to Copilot [Agent Host]',
-					message: 'They are stored in user data, which only VS Code reads. Move them to \'~/.copilot\' so both VS Code and this harness can use them, keeping their name, type, and content.',
+					message: 'They are stored in user data, which only FusionIDE reads. Move them to \'~/.copilot\' so both FusionIDE and this harness can use them, keeping their name, type, and content.',
 					consequence: 'Migrated files aren\'t currently included in Settings Sync.',
 					consequenceMentionsSync: true,
 					bannerHidden: false,
