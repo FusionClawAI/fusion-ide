@@ -64,10 +64,22 @@
 		"termsStatementUrl": "",
 		"privacyStatementUrl": "",
 		"provider": {
-			"default": { "id": "fusionclaw", "name": "FusionClaw" },
-			"enterprise": { "id": "fusionclaw", "name": "FusionClaw" },
-			"google": { "id": "fusionclaw", "name": "FusionClaw" },
-			"apple": { "id": "fusionclaw", "name": "FusionClaw" }
+			"default": {
+				"id": "fusionclaw",
+				"name": "FusionClaw"
+			},
+			"enterprise": {
+				"id": "fusionclaw",
+				"name": "FusionClaw"
+			},
+			"google": {
+				"id": "fusionclaw",
+				"name": "FusionClaw"
+			},
+			"apple": {
+				"id": "fusionclaw",
+				"name": "FusionClaw"
+			}
 		},
 		"providerExtensionId": "fusionclaw.fusionide-bridge",
 		"providerUriSetting": "",
@@ -95,5 +107,12 @@
 			"chatParticipantAdditions",
 			"chatProvider"
 		]
+	},
+	"configurationDefaults": {
+		"workbench.startupEditor": "none",
+		"workbench.welcomePage.walkthroughs.openOnInstall": false,
+		"workbench.welcomePage.walkthroughs.showBuiltIn": false,
+		"workbench.welcomePage.experimentalOnboarding": false,
+		"workbench.tips.enabled": false
 	}
 }

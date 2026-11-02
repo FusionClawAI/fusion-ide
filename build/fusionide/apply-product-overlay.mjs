@@ -76,6 +76,13 @@ const IDENTITY = {
 	serverDataFolderName: '.fusionide-server',
 	urlProtocol: 'fusionide',
 	quality: 'stable',
+	configurationDefaults: {
+		"workbench.startupEditor": "none",
+		"workbench.welcomePage.walkthroughs.openOnInstall": false,
+		"workbench.welcomePage.walkthroughs.showBuiltIn": false,
+		"workbench.welcomePage.experimentalOnboarding": false,
+		"workbench.tips.enabled": false
+	},
 	licenseName: 'MIT',
 	licenseUrl: 'https://github.com/FusionClawAI/fusion-ide/blob/fc/main/LICENSE.txt',
 	serverLicenseUrl: 'https://github.com/FusionClawAI/fusion-ide/blob/fc/main/LICENSE.txt',
@@ -157,6 +164,11 @@ function violations(product) {
 	for (const key of FORBIDDEN_KEYS) {
 		if (key in product) {
 			found.push(`forbidden key present: ${key}`);
+		}
+	}
+	for (const [key, value] of Object.entries(IDENTITY.configurationDefaults)) {
+		if (product.configurationDefaults?.[key] !== value) {
+			found.push(`incorrect configuration default: ${key}`);
 		}
 	}
 	const serialized = JSON.stringify(product);

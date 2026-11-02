@@ -1782,9 +1782,14 @@ export class GettingStartedInputSerializer implements IEditorSerializer {
 		return JSON.stringify({ selectedCategory: editorInput.selectedCategory, selectedStep: editorInput.selectedStep });
 	}
 
-	public deserialize(instantiationService: IInstantiationService, serializedEditorInput: string): GettingStartedInput {
+	public deserialize(instantiationService: IInstantiationService, serializedEditorInput: string): GettingStartedInput | undefined {
 
 		return instantiationService.invokeFunction(accessor => {
+			// --- Start FusionIDE ---
+			if (accessor.get(IConfigurationService).getValue<string>('workbench.startupEditor') === 'none') {
+				return undefined;
+			}
+			// --- End FusionIDE ---
 			try {
 				const { selectedCategory, selectedStep } = JSON.parse(serializedEditorInput);
 				return new GettingStartedInput({ selectedCategory, selectedStep });

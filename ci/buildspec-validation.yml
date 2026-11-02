@@ -18,6 +18,7 @@ phases:
       - npm ci
   build:
     commands:
+      - node build/fusionide/apply-product-overlay.mjs --check
       - npm run typecheck-client
       - npm run vscode-dts-compile-check
       - npm run monaco-compile-check
