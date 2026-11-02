@@ -126,28 +126,30 @@
 	height: calc(100% - 70px);
 }
 
+/* --- Start FusionIDE --- */
+.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark-wrapper > .editor-group-watermark {
+ max-width: 420px;
+ height: 100%;
+ padding: 24px;
+ box-sizing: border-box;
+ pointer-events: none;
+}
 .monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark-wrapper .editor-group-watermark .letterpress {
-	width: 100%;
-	max-height: 100%;
-	aspect-ratio: 1/1;
-	background-image: url('./letterpress-light.svg');
-	background-size: contain;
-	background-position-x: center;
-	background-repeat: no-repeat;
-	max-width: 256px;
+ width: 100%;
+ aspect-ratio: 320 / 64;
+ background: url('./fusionclaw-watermark-light.svg') center / contain no-repeat;
+ opacity: .16;
 }
-
-.monaco-workbench.vs-dark .part.editor > .content .editor-group-container .editor-group-watermark .letterpress {
-	background-image: url('./letterpress-dark.svg');
-}
-
-.monaco-workbench.hc-light .part.editor > .content .editor-group-container .editor-group-watermark .letterpress {
-	background-image: url('./letterpress-hcLight.svg');
-}
-
+.monaco-workbench.vs-dark .part.editor > .content .editor-group-container .editor-group-watermark .letterpress,
 .monaco-workbench.hc-black .part.editor > .content .editor-group-container .editor-group-watermark .letterpress {
-	background-image: url('./letterpress-hcDark.svg');
+ background-image: url('./fusionclaw-watermark-dark.svg');
+ opacity: .20;
 }
+.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark-wrapper .shortcuts,
+.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark-wrapper > .editor-group-watermark-toolbar-container {
+ display: none;
+}
+/* --- End FusionIDE --- */
 
 .monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark-wrapper .editor-group-watermark .shortcuts {
 	width: 100%;

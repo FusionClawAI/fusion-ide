@@ -78,7 +78,6 @@ suite('ChatTipService', () => {
 	let mockPromptInstructionFiles: IPromptPath[];
 	let chatEntitlementService: TestChatEntitlementService;
 	let currentChatModes: IChatModes;
-	let catalogCommandRegistrations: Map<string, IDisposable>;
 
 	/**
 	 * Registers every `command:` link referenced by the real {@link TIP_CATALOG} so that tips are
@@ -111,10 +110,10 @@ suite('ChatTipService', () => {
 		} as IProductService;
 	}
 
-	function createService(hasCopilot: boolean = true, tipsEnabled: boolean = true): ChatTipService {
+	function createService(hasCopilot: boolean = true, tipsEnabled: boolean = true, serviceType: typeof ChatTipService = ChatTipService): ChatTipService {
 		instantiationService.stub(IProductService, createProductService(hasCopilot));
 		configurationService.setUserConfiguration('chat.tips.enabled', tipsEnabled);
-		return testDisposables.add(instantiationService.createInstance(ChatTipService));
+		return testDisposables.add(instantiationService.createInstance(serviceType));
 	}
 
 	/**
@@ -211,7 +210,7 @@ suite('ChatTipService', () => {
 			lookupKeybinding: () => undefined,
 		} as Partial<IKeybindingService> as IKeybindingService);
 		instantiationService.stub(IWorkbenchAssignmentService, new NullWorkbenchAssignmentService());
-		catalogCommandRegistrations = registerCatalogCommands();
+		registerCatalogCommands();
 	});
 
 	test('returns a welcome tip', () => {
@@ -686,14 +685,24 @@ suite('ChatTipService', () => {
 	});
 
 	test('excludes a tip whose command is not registered', () => {
-		catalogCommandRegistrations.get('workbench.action.chat.open')!.dispose();
-
-		const service = createService();
+		// --- Start FusionIDE ---
+		// Other suites may import the real command. Isolate availability per service
+		// instead of removing registrations owned by the shared workbench registry.
+		class MissingPlanCommandChatTipService extends ChatTipService {
+			protected override _isCommandRegistered(commandId: string): boolean {
+				return commandId !== 'workbench.action.chat.open' && super._isCommandRegistered(commandId);
+			}
+		}
+		const service = createService(true, true, MissingPlanCommandChatTipService);
+		// --- End FusionIDE ---
 		contextKeyService.createKey(ChatContextKeys.chatModeKind.key, ChatModeKind.Agent);
 		contextKeyService.createKey(ChatContextKeys.chatModeName.key, 'Agent');
 		contextKeyService.createKey(ChatContextKeys.chatSessionType.key, localChatSessionType);
 		contextKeyService.createKey(ChatContextKeys.chatModelId.key, 'auto');
 
+		// --- Start FusionIDE ---
+		assert.strictEqual(createService().getWelcomeTip(contextKeyService)?.id, 'tip.planMode');
+		// --- End FusionIDE ---
 		assertTipNeverShown(service, 'tip.planMode');
 	});
 

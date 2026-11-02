@@ -154,6 +154,11 @@ export class StartupPageRunnerContribution extends Disposable implements IWorkbe
 	}
 
 	private tryOpenWalkthroughForFolder(): boolean {
+		// --- Start FusionIDE ---
+		if (this.configurationService.getValue<string>('workbench.startupEditor') === 'none') {
+			return false;
+		}
+		// --- End FusionIDE ---
 		const toRestore = this.storageService.get(restoreWalkthroughsConfigurationKey, StorageScope.PROFILE);
 		if (!toRestore) {
 			return false;

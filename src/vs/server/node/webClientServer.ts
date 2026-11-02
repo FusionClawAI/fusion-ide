@@ -378,6 +378,9 @@ export class WebClientServer {
 			enabledExtensionProposedApi: this._environmentService.args['enable-proposed-api'],
 			folderUri: resolveWorkspaceURI(this._environmentService.args['default-folder']),
 			workspaceUri: resolveWorkspaceURI(this._environmentService.args['default-workspace']),
+			// --- Start FusionIDE ---
+			configurationDefaults: this._productService.configurationDefaults,
+			// --- End FusionIDE ---
 			productConfiguration,
 			callbackRoute: callbackRoute
 		};

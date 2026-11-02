@@ -121,6 +121,9 @@ export interface IProductConfiguration {
 	readonly sharedDataFolderName: string; // location for shared data (e.g. ~/.vscode-insiders-shared)
 
 	readonly builtInExtensions?: IBuiltInExtension[];
+	// --- Start FusionIDE ---
+	readonly configurationDefaults?: Record<string, unknown>;
+	// --- End FusionIDE ---
 	readonly walkthroughMetadata?: IProductWalkthrough[];
 	readonly featuredExtensions?: IFeaturedExtension[];
 

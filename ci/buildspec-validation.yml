@@ -15,9 +15,16 @@ phases:
       - n "$(cat .nvmrc)"
       - apt-get update -qq
       - apt-get install -y libxkbfile-dev pkg-config libkrb5-dev libxss1 libsecret-1-dev xvfb
+      # The locked ripgrep installer uses GitHub's unauthenticated release API,
+      # which rate-limits shared build IPs. Prime its cache from the public asset
+      # URL and verify GitHub's published digest; CI needs no GitHub secret.
+      - mkdir -p /tmp/vscode-ripgrep-cache-1.17.1
+      - curl --fail --location --retry 3 https://github.com/microsoft/ripgrep-prebuilt/releases/download/v15.0.1/ripgrep-v15.0.1-x86_64-unknown-linux-musl.tar.gz --output /tmp/vscode-ripgrep-cache-1.17.1/ripgrep-v15.0.1-x86_64-unknown-linux-musl.tar.gz
+      - echo '4499958bfd5252df3d9e7504127fd448e4a14fbf2805ef4f14baaa1bcf775188  /tmp/vscode-ripgrep-cache-1.17.1/ripgrep-v15.0.1-x86_64-unknown-linux-musl.tar.gz' | sha256sum --check -
       - npm ci
   build:
     commands:
+      - node build/fusionide/apply-product-overlay.mjs --check
       - npm run typecheck-client
       - npm run vscode-dts-compile-check
       - npm run monaco-compile-check

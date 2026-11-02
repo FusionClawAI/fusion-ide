@@ -181,7 +181,10 @@ export class WalkthroughsService extends Disposable implements IWalkthroughsServ
 
 	private registerWalkthroughs() {
 
-		walkthroughs.forEach(async (category, index) => {
+		// --- Start FusionIDE ---
+		const builtInWalkthroughs = this.configurationService.getValue<boolean>('workbench.welcomePage.walkthroughs.showBuiltIn') ? walkthroughs : [];
+		builtInWalkthroughs.forEach(async (category, index) => {
+		// --- End FusionIDE ---
 
 			this._registerWalkthrough({
 				...category,
