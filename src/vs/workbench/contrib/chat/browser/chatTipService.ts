@@ -781,7 +781,7 @@ export class ChatTipService extends Disposable implements IChatTipService {
 			this._logService.debug('#ChatTips: tip is not eligible because a required mode is not available', tip.id, tip.requiresModeNames);
 			return false;
 		}
-		if (tip.requiresCommands?.some(commandId => !CommandsRegistry.getCommand(commandId))) {
+		if (tip.requiresCommands?.some(commandId => !this._isCommandRegistered(commandId))) {
 			this._logService.debug('#ChatTips: tip is not eligible because a required command is not registered', tip.id, tip.requiresCommands);
 			return false;
 		}
@@ -804,12 +804,18 @@ export class ChatTipService extends Disposable implements IChatTipService {
 		return !!widget?.input.currentChatModesObs.get().findModeByName(modeName);
 	}
 
+	// --- Start FusionIDE ---
+	protected _isCommandRegistered(commandId: string): boolean {
+		return !!CommandsRegistry.getCommand(commandId);
+	}
+	// --- End FusionIDE ---
+
 	private _areTipCommandsRegistered(tip: ITipDefinition): boolean {
 		const ctx: ITipBuildContext = { keybindingService: this._keybindingService, experimentalTipMessages: this._experimentalTipMessages };
 		const rawMessage = tip.buildMessage(ctx);
 		const commandIds = extractCommandIds(rawMessage.value);
 		for (const commandId of commandIds) {
-			if (!CommandsRegistry.getCommand(commandId)) {
+			if (!this._isCommandRegistered(commandId)) {
 				this._logService.debug('#ChatTips: tip excluded because command is not registered', tip.id, commandId);
 				return false;
 			}
