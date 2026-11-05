@@ -92,7 +92,9 @@ const cliStdInFilePath = process.env['VSCODE_STDIN_FILE_PATH'] as string;
 
 export async function main(desc: ProductDescription, args: string[]): Promise<void> {
 	if (!cliPipe && !cliCommand) {
-		console.log('Command is only available in WSL or inside a Visual Studio Code terminal.');
+		// --- Start FusionIDE ---
+		console.log('Command is only available in WSL or inside a FusionIDE terminal.');
+		// --- End FusionIDE ---
 		return;
 	}
 
@@ -480,7 +482,9 @@ function asExtensionIdOrVSIX(inputs: string[] | undefined) {
 }
 
 function fatal(message: string, err: unknown): void {
-	console.error('Unable to connect to VS Code server: ' + message);
+	// --- Start FusionIDE ---
+	console.error('Unable to connect to FusionIDE server: ' + message);
+	// --- End FusionIDE ---
 	console.error(err);
 	process.exit(1);
 }
